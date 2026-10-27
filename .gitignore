@@ -1,0 +1,6 @@
+#this is for the files git should ignore
+node_modules/
+dist/
+.env
+*.log
+.DS_Store

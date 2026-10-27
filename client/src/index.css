@@ -1,0 +1,81 @@
+/*this is for the base styles and color variables*/
+* { box-sizing: border-box; }
+
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --primary: #4f46e5;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/*this is for the page container*/
+.container { max-width: 800px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+h1 { font-size: 1.6rem; }
+.muted { color: var(--muted); }
+
+/*this is for the navbar*/
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.logo { width: 26px; height: 26px; }
+
+.links { display: flex; gap: 0.25rem; }
+.links a { padding: 0.4rem 0.75rem; border-radius: 8px; color: var(--muted); text-decoration: none; }
+.links a:hover { color: var(--text); }
+.links a.active { color: var(--primary); background: #eef2ff; }
+
+/*this is for the buttons*/
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/*this is for the form inputs*/
+.form { display: flex; gap: 0.5rem; margin: 1rem 0; }
+.form input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+/*this is for the list of results*/
+.list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.list li {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
