@@ -1,13 +1,13 @@
 //this is for the server entry point
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
 
 //this is for the database connection (only needed in files that run queries)
-import pool from './db.js';
+import pool from "./db.js";
 
 //this is for the route files (add one import line per new route file)
-import exampleRouter from './routes/example.js';
+import exampleRouter from "./routes/example.js";
 
 //this is for the express app
 const app = express();
@@ -20,18 +20,18 @@ app.use(cors());
 app.use(express.json());
 
 //this is for the health check endpoint (quick way to check the api is alive)
-app.get('/api/health', async (_req, res) => {
+app.get("/api/health", async (_req, res) => {
   try {
     //this is for checking the database connection too
-    await pool.query('SELECT 1');
-    res.json({ status: 'ok' });
+    await pool.query("SELECT 1");
+    res.json({ status: "ok" });
   } catch (err) {
-    res.status(500).json({ status: 'db error', error: err.message });
+    res.status(500).json({ status: "db error", error: err.message });
   }
 });
 
 //this is for mounting the route files (add one line per new route file)
-app.use('/api/example', exampleRouter);
+app.use("/api/example", exampleRouter);
 
 //this is for starting the server
 app.listen(PORT, () => {

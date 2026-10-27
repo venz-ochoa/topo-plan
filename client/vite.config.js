@@ -1,6 +1,6 @@
 //this is for the vite config
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   //this is for the react plugin (jsx support)
@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': 'http://localhost:3001',
+      "/api": "http://localhost:3001",
     },
   },
 });

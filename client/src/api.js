@@ -1,5 +1,5 @@
 //this is for the api base url (works in docker and in dev thanks to the nginx/vite proxies)
-const BASE = '/api';
+const BASE = "/api";
 
 //this is for the GET all request template
 export async function getItems() {
@@ -16,8 +16,8 @@ export async function getItem(id) {
 //this is for the POST request template (data is sent as json in the body)
 export async function postItem(data) {
   const res = await fetch(`${BASE}/example`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   return res.json();
@@ -26,8 +26,8 @@ export async function postItem(data) {
 //this is for the PUT request template
 export async function putItem(id, data) {
   const res = await fetch(`${BASE}/example/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   return res.json();
@@ -36,7 +36,7 @@ export async function putItem(id, data) {
 //this is for the DELETE request template
 export async function deleteItem(id) {
   const res = await fetch(`${BASE}/example/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
   return res.json();
 }
