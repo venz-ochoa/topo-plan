@@ -15,7 +15,6 @@ A minimal full-stack template: React (Vite) + Express + PostgreSQL, wired togeth
 ```text
 .
 ├── docker-compose.yml        #this is for the 3 services (db, api, web) - one command runs everything
-├── .env.example              #this is for the database credentials (copy to .env to override)
 ├── server/                   #this is for the backend
 │   ├── Dockerfile            #this is for the api container image
 │   ├── package.json          #this is for the backend dependencies (express, pg, cors, dotenv)
@@ -122,7 +121,7 @@ npm run dev
   ```
 
 - The connection string comes from `docker-compose.yml`. Locally (outside Docker) it falls back to `postgres://app:app@localhost:5432/app`.
-- Credentials can be changed in `.env` (copy `.env.example` first).
+- Credentials live in `docker-compose.yml` (defaults: user `app`, password `app`, db `app`).
 
 ## Pushing to GitHub
 

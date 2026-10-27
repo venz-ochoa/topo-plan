@@ -8,9 +8,9 @@ export default function Example() {
   //this is for the state that holds the input value for the POST request
   const [name, setName] = useState('');
 
-  //this is for loading the data when the page opens
+  //this is for loading the data when the page opens (catch stops errors if the api is not up yet)
   useEffect(() => {
-    getItems().then(setItems);
+    getItems().then(setItems).catch((err) => console.error(err));
   }, []);
 
   //this is for the POST request when the form is submitted
