@@ -35,7 +35,7 @@ function daysBetween(startStr, endStr) {
 }
 
 //this is for one task row
-function GanttRow({ task, days, info }) {
+function GanttRow({ task, days, info, onSlip }) {
   return (
     <>
       <div className="cell name">
@@ -44,8 +44,13 @@ function GanttRow({ task, days, info }) {
         {task.who && <span className="who">Assigned to {task.who}</span>}
         {/*this is for the buffer the engine computed*/}
         {info && <span className="who">{info.critical ? 'No buffer — critical' : info.slack + '-day buffer'}</span>}
+        {/*this is for slipping the task a day later or earlier*/}
+        <div className="slip">
+          <button onClick={() => onSlip(task.id, -1)}>−1 day</button>
+          <button onClick={() => onSlip(task.id, 1)}>+1 day</button>
+        </div>
       </div>
-        {days.map(d => {
+      {days.map(d => {
         //this is for deciding if this day is part of the task
         const str = toDateStr(d)
         const inRange = str >= task.startDate && str <= task.endDate
@@ -73,12 +78,31 @@ export default function Home() {
     setTasks([...tasks, task])
   }
 
+  //this is for moving one task (and its bar) later or earlier by a day
+  function slipTask(id, move) {
+    setTasks(tasks.map(t => {
+      if (t.id !== id) return t
+      const s = new Date(t.startDate)
+      const e = new Date(t.endDate)
+      s.setDate(s.getDate() + move)
+      e.setDate(e.getDate() + move)
+      return { ...t, startDate: toDateStr(s), endDate: toDateStr(e) }
+    }))
+  }
+
   //this is for translating tasks into engine format (dates become day counts)
   const engineTasks = tasks.map(t => ({
     id: t.id,
     days: daysBetween(t.startDate, t.endDate),
     dependsOn: t.dependsOn,
   }))
+
+  //this is for the end date of the whole plan, written like "Fri 30"
+  let endsText = ''
+  if (tasks.length > 0) {
+    const last = new Date(tasks.map(t => t.endDate).sort()[tasks.length - 1] + 'T00:00:00')
+    endsText = day_names[last.getDay()] + ' ' + last.getDate()
+  }
 
   //this is for running the engine safely (it throws on circles)
   let analysis = null
@@ -95,6 +119,9 @@ export default function Home() {
 
       <AddTask onAdd={addTask} tasks={tasks} />
 
+      {/*this is for the plan's end date, it moves when a critical task slips*/}
+      {tasks.length > 0 && <p className="ends">Project ends {endsText}</p>}
+
       {/*this is for the circle alarm*/}
       {error && <div className="error-box">Circle detected! ({error})</div>}
 
@@ -106,7 +133,7 @@ export default function Home() {
           </div>
         ))}
         {tasks.map(t => (
-          <GanttRow key={t.id} task={t} days={days} info={analysis ? analysis[t.id] : null} />
+          <GanttRow key={t.id} task={t} days={days} info={analysis ? analysis[t.id] : null} onSlip={slipTask} />
         ))}
       </div>
 

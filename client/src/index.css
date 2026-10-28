@@ -184,3 +184,18 @@ h1, h2 { font-size: 1.25rem; margin: 0 0 1.25rem; }
   padding: 10px 12px;
   margin-bottom: 8px;
 }
+
+/*this is for the slip buttons under the task name*/
+.slip { margin-top: 4px; }
+.slip button {
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 6px;
+  margin-right: 4px;
+  border: 1px solid #111;
+  background: #fff;
+  cursor: pointer;
+}
+
+/*this is for the project end date line above the chart*/
+.ends { font-size: 13px; color: #666; margin: 0 0 10px; }
