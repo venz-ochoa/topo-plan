@@ -8,17 +8,8 @@ export default function AddTask({ onAdd, tasks }) {
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
     const [priority, setPriority] = useState('med')
-    //this is for which tasks must finish first
-    const [deps, setDeps] = useState([])
-
-    //this is for turning a dependency checkbox on or off
-    function toggleDep(id) {
-        if (deps.includes(id)) {
-        setDeps(deps.filter(d => d !== id))
-        } else {
-        setDeps([...deps, id])
-        }
-    }
+    //this is for the task that must finish first (one dependency, shown in the dropdown)
+    const [dep, setDep] = useState('')
 
     //this is for saving the task when the button is clicked
     function handleSubmit(e) {
@@ -34,16 +25,16 @@ export default function AddTask({ onAdd, tasks }) {
         startDate: startDate,
         endDate: endDate,
         priority: priority,
-        dependsOn: deps,
+        dependsOn: dep ? [dep] : [],
         })
 
-    //this is for clearing the boxes
-    setName('')
-    setWho('')
-    setStartDate('')
-    setEndDate('')
-    setPriority('med')
-    setDeps([])
+        //this is for clearing the boxes
+        setName('')
+        setWho('')
+        setStartDate('')
+        setEndDate('')
+        setPriority('med')
+        setDep('')
     }
 
     return (
@@ -77,14 +68,14 @@ export default function AddTask({ onAdd, tasks }) {
             <input id="task-end" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </div>
 
-        {/*this is for picking which tasks must finish first (only shows when tasks exist)*/}
+        {/*this is for picking which task must finish first, the dropdown keeps your choice shown*/}
         {tasks.length > 0 && (
             <div className="field span-2">
             <label htmlFor="task-deps">Depends on</label>
-            <select id="task-deps" value="" onChange={e => toggleDep(e.target.value)}>
-                <option value="">None — tap to pick…</option>
+            <select id="task-deps" value={dep} onChange={e => setDep(e.target.value)}>
+                <option value="">None</option>
                 {tasks.map(t => (
-                <option key={t.id} value={t.id}>{(deps.includes(t.id) ? '✓ ' : '') + t.name}</option>
+                <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
             </select>
             </div>

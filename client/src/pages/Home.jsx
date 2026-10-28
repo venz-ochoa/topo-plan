@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import AddTask from '../components/AddTask.jsx'
 import { analyze } from '../engine/cpm.js'
+import { reschedule } from '../engine/schedule.js'
 
 //this is for the names of the weekdays
 const day_names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -34,8 +35,28 @@ function daysBetween(startStr, endStr) {
   return (new Date(endStr) - new Date(startStr)) / 86400000 + 1
 }
 
+//this is for finding a task and every task that waits for it
+function findChain(id, tasks) {
+  const ids = [id]
+  let added = true
+  while (added) {
+    added = false
+    tasks.forEach(t => {
+      if (ids.includes(t.id)) return
+      if (t.dependsOn.some(d => ids.includes(d))) {
+        ids.push(t.id)
+        added = true
+      }
+    })
+  }
+  return ids
+}
+
 //this is for one task row
 function GanttRow({ task, days, info, onSlip }) {
+  //this is for knowing if the task starts today (then -1 day is blocked)
+  const startsToday = task.startDate <= toDateStr(new Date())
+
   return (
     <>
       <div className="cell name">
@@ -46,7 +67,7 @@ function GanttRow({ task, days, info, onSlip }) {
         {info && <span className="who">{info.critical ? 'No buffer — critical' : info.slack + '-day buffer'}</span>}
         {/*this is for slipping the task a day later or earlier*/}
         <div className="slip">
-          <button onClick={() => onSlip(task.id, -1)}>−1 day</button>
+          <button disabled={startsToday} onClick={() => onSlip(task.id, -1)}>−1 day</button>
           <button onClick={() => onSlip(task.id, 1)}>+1 day</button>
         </div>
       </div>
@@ -73,27 +94,38 @@ export default function Home() {
   //this is for the list of tasks
   const [tasks, setTasks] = useState([])
 
-  //this is for adding a new task
+  //this is for adding a new task, then fixing the dates
   function addTask(task) {
-    setTasks([...tasks, task])
+    setTasks(reschedule([...tasks, task]))
   }
 
-  //this is for moving one task (and its bar) later or earlier by a day
+  //this is for moving a task and the tasks that wait for it, by a day
   function slipTask(id, move) {
-    setTasks(tasks.map(t => {
-      if (t.id !== id) return t
-      const s = new Date(t.startDate)
-      const e = new Date(t.endDate)
+    //this is for blocking -1 day when the task starts today
+    const today = toDateStr(new Date())
+    const task = tasks.find(t => t.id === id)
+    if (move < 0 && task.startDate <= today) return
+
+    //this is for moving the task and everything that depends on it
+    const chain = findChain(id, tasks)
+    const moved = tasks.map(t => {
+      if (!chain.includes(t.id)) return t
+      const s = new Date(t.startDate + 'T00:00:00')
+      const e = new Date(t.endDate + 'T00:00:00')
       s.setDate(s.getDate() + move)
       e.setDate(e.getDate() + move)
       return { ...t, startDate: toDateStr(s), endDate: toDateStr(e) }
-    }))
+    })
+    setTasks(reschedule(moved))
   }
 
   //this is for translating tasks into engine format (dates become day counts)
+  const today = toDateStr(new Date())
   const engineTasks = tasks.map(t => ({
     id: t.id,
     days: daysBetween(t.startDate, t.endDate),
+    //this is for how many days after today the task starts
+    startDay: (new Date(t.startDate) - new Date(today)) / 86400000,
     dependsOn: t.dependsOn,
   }))
 

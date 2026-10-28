@@ -12,7 +12,7 @@ export function forwardPass(tasks) {
   //this is for walking through the tasks in the correct order
   sorted.forEach((task) => {
     //this is for finding the latest finish among this task's dependencies (0 if none)
-    let start = 0;
+    let start = task.startDay || 0;
     task.dependsOn.forEach((depId) => {
       const dep = result[depId];
       if (dep && dep.earlyFinish > start) {
