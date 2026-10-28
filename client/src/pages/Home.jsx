@@ -45,14 +45,16 @@ function GanttRow({ task, days, info }) {
         {/*this is for the buffer the engine computed*/}
         {info && <span className="who">{info.critical ? 'No buffer — critical' : info.slack + '-day buffer'}</span>}
       </div>
-      {days.map(d => {
-        //this is for deciding how one day cell looks
+        {days.map(d => {
+        //this is for deciding if this day is part of the task
         const str = toDateStr(d)
         const inRange = str >= task.startDate && str <= task.endDate
-        let cls = 'cell'
-        if (inRange) cls = cls + ' bar'
-        if (inRange && info && info.critical) cls = cls + ' crit'
-        return <div key={d.getTime()} className={cls} />
+        return (
+          <div key={d.getTime()} className="cell day">
+            {/*this is for the thin line, only on days the task runs*/}
+            {inRange && <div className={info && info.critical ? 'bar crit' : 'bar'} />}
+          </div>
+        )
       })}
     </>
   )

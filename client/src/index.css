@@ -74,9 +74,21 @@ h1, h2 { font-size: 1.25rem; margin: 0 0 1.25rem; }
 }
 .tag.high { color: #111; font-weight: 700; }
 
-/*this is for the bars, grey for normal, black for critical, color means something*/
-.bar { background: #d4d4d4; }
-.bar.crit { background: #111; }
+/*this is for the day boxes, so the line sits in the vertical middle, edge to edge*/
+.day {
+  display: flex;
+  align-items: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/*this is for the bars, a thin line inside the day cell, grey normal, black critical*/
+.bar { 
+  width: 100%; 
+  height: 12px; 
+  background: #d4d4d4; }
+
+.bar.crit { background: #343434; }
 
 /*this is for the add task form, a grid with two columns*/
 .add-task {
