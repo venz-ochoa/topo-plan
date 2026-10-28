@@ -1,27 +1,19 @@
-/*this is for the base styles and color variables*/
+/*this is for the base styles, plain and bare bones*/
 * { box-sizing: border-box; }
-
-:root {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --muted: #64748b;
-  --primary: #4f46e5;
-}
 
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  line-height: 1.5;
+  background: #fff;
+  color: #111;
 }
 
-/*this is for the page container*/
-.container { max-width: 800px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+/*this is for the page container, keeps every line a comfortable length*/
+.container { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
 
-h1 { font-size: 1.6rem; }
-.muted { color: var(--muted); }
+h1, h2 { font-size: 1.25rem; margin: 0 0 1.25rem; }
+.muted { color: #666; }
 
 /*this is for the navbar*/
 .navbar {
@@ -29,56 +21,19 @@ h1 { font-size: 1.6rem; }
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.25rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #ddd;
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   font-weight: 700;
-  color: var(--text);
+  color: #111;
   text-decoration: none;
 }
 
-.logo { width: 26px; height: 26px; }
-
-.links { display: flex; gap: 0.25rem; }
-.links a { padding: 0.4rem 0.75rem; border-radius: 8px; color: var(--muted); text-decoration: none; }
-.links a:hover { color: var(--text); }
-.links a.active { color: var(--primary); background: #eef2ff; }
-
-/*this is for the buttons*/
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--primary);
-  color: #fff;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/*this is for the form inputs*/
-.form { display: flex; gap: 0.5rem; margin: 1rem 0; }
-.form input {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font: inherit;
-}
-
-/*this is for the list of results*/
-.list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-.list li {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-}
+.links { display: flex; gap: 0.75rem; }
+.links a { color: #666; text-decoration: none; }
+.links a:hover { color: #111; }
+.links a.active { color: #111; text-decoration: underline; }
 
 /*this is for the gantt chart grid, one column for task names, 7 for days*/
 .gantt {
@@ -88,64 +43,132 @@ h1 { font-size: 1.6rem; }
 
 /*this is for every little box in the chart*/
 .cell {
-  border: 1px solid #e2e8f0;
-  min-height: 36px;
-  padding: 6px 8px;
+  border: 1px solid #ddd;
+  min-height: 40px;
+  padding: 8px 10px;
   font-size: 14px;
 }
 
 /*this is for the date header boxes*/
 .head {
-  background: #f1f5f9;
+  background: #f5f5f5;
   font-weight: 600;
   text-align: center;
 }
 
 /*this is for the task name column*/
-.name {
-  font-weight: 500;
-}
-
-/*this is for the add task form row*/
-.add-task {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-/*this is for the form input boxes*/
-.add-task input {
-  padding: 8px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-/*this is for the add button*/
-.add-task button {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  background: #8b5cf6;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
+.name { font-weight: 500; }
 
 /*this is for the assigned person shown under the task name*/
 .who {
   display: block;
   font-size: 12px;
-  color: #64748b;
+  color: #666;
 }
 
-/*this is for the purple bar drawn on the task's date*/
-.bar {
-  background: #8b5cf6;
+/*this is for the priority label, plain text, no pill*/
+.tag {
+  margin-left: 6px;
+  font-size: 11px;
+  color: #666;
+}
+.tag.high { color: #111; font-weight: 700; }
+
+/*this is for the bars, grey for normal, black for critical, color means something*/
+.bar { background: #d4d4d4; }
+.bar.crit { background: #111; }
+
+/*this is for the add task form, a grid with two columns*/
+.add-task {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  margin: 0 0 1.5rem;
+}
+
+/*this is for a labeled field: small label on top, input below*/
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/*this is for fields that take the full width of the form*/
+.span-2 { grid-column: 1 / -1; }
+
+/*this is for the small labels*/
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/*this is for all form inputs and the dropdown*/
+.add-task input,
+.add-task select {
+  padding: 8px 10px;
+  border: 1px solid #bbb;
+  border-radius: 0;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+  width: 100%;
+}
+
+/*this is for the checkbox, remove the box styling it inherits*/
+.add-task input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+}
+
+/*this is for the bottom row: checkbox on the left, button on the right*/
+.form-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/*this is for the small hint text*/
+.hint { font-size: 12px; color: #666; }
+
+/*this is for the add button, plain black*/
+.add-task button {
+  padding: 8px 14px;
+  border: 1px solid #111;
+  border-radius: 0;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /*this is for the message when there are no tasks yet*/
-.empty {
-  color: #64748b;
-  font-size: 14px;
+.empty { color: #666; font-size: 14px; }
+
+/*this is for the old template bits, still used by the example page*/
+.btn {
+  padding: 8px 14px;
+  border: 1px solid #111;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.form { display: flex; gap: 8px; margin: 1rem 0; }
+.form input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #bbb;
+  font: inherit;
+}
+.list { list-style: none; padding: 0; margin: 0; }
+.list li {
+  border: 1px solid #ddd;
+  padding: 10px 12px;
+  margin-bottom: 8px;
 }
