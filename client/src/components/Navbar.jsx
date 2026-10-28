@@ -5,13 +5,10 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <NavLink to="/" className="brand">
-        <img src="/icons/logo.svg" alt="logo" className="logo" />
-        <span>My Template</span>
+        <span>TopoPlan</span>
       </NavLink>
       <div className="links">
         <NavLink to="/">Home</NavLink>
-        {/*this is for the example page link (delete this and add your own links)*/}
-        <NavLink to="/example">Example</NavLink>
       </div>
     </nav>
   );
