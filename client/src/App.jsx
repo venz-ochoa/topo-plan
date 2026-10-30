@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
-import Home from './pages/Home.jsx'
+import { getMyProject } from './db.js'
 import Login from './pages/Login.jsx'
 import SignUp from './pages/SignUp.jsx'
+import TeamSetup from './pages/TeamSetup.jsx'
+import Project from './pages/Project.jsx'
 
 export default function App() {
   //this is for the logged in user (null means nobody)
@@ -10,6 +12,11 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   //this is for which screen shows when logged out
   const [screen, setScreen] = useState('login')
+  //this is for the user's project (undefined = still loading, null = no project yet)
+  const [project, setProject] = useState(undefined)
+  const [error, setError] = useState('')
+  //this is for the invite code from a link like https://site/#join=abc123
+  const [inviteCode] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get('join') || '')
 
   //this is for checking if someone is already logged in, and listening for changes
   useEffect(() => {
@@ -21,20 +28,37 @@ export default function App() {
     return () => data.subscription.unsubscribe()
   }, [])
 
-  if (loading) return <p>Loading...</p>
+  //this is for loading the project once we know who the user is
+  const userId = session ? session.user.id : null
+  useEffect(() => {
+    if (!userId) {
+      setProject(undefined)
+      return
+    }
+    getMyProject(userId).then(setProject).catch(e => setError(e.message))
+  }, [userId])
 
-  //this is for the home page, only when logged in
-  if (session) {
-    return (
-      <div>
-        <button onClick={() => supabase.auth.signOut()}>Log out</button>
-        <Home />
-      </div>
-    )
+  //this is for reloading the project after creating or joining one
+  function reloadProject() {
+    getMyProject(userId).then(setProject).catch(e => setError(e.message))
   }
 
+  if (loading) return <p>Loading...</p>
+
   //this is for the login and sign up screens
-  return screen === 'login'
-    ? <Login onSwitch={() => setScreen('signup')} />
-    : <SignUp onSwitch={() => setScreen('login')} />
+  if (!session) {
+    return screen === 'login'
+      ? <Login onSwitch={() => setScreen('signup')} />
+      : <SignUp onSwitch={() => setScreen('login')} />
+  }
+
+  return (
+    <div>
+      <button onClick={() => supabase.auth.signOut()}>Log out</button>
+      {error && <div className="error-box" role="alert">{error}</div>}
+      {project === undefined && !error && <p>Loading...</p>}
+      {project === null && <TeamSetup inviteCode={inviteCode} onDone={reloadProject} />}
+      {project && <Project key={project.id} project={project} userId={userId} />}
+    </div>
+  )
 }
