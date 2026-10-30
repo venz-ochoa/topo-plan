@@ -24,21 +24,36 @@ h1, h2 { font-size: 1.25rem; margin: 0 0 1.25rem; }
   border-bottom: 1px solid #ddd;
 }
 
+/*this is for the TopoPlan Caption*/
 .brand {
   font-weight: 700;
   color: #111;
   text-decoration: none;
 }
 
+/*Navigation Links*/
 .links { display: flex; gap: 0.75rem; }
 .links a { color: #666; text-decoration: none; }
 .links a:hover { color: #111; }
 .links a.active { color: #111; text-decoration: underline; }
 
-/*this is for the gantt chart grid, one column for task names, 7 for days*/
+/*this is for the add task button in the title row, black like the others*/
+.add-btn {
+  padding: 8px 14px;
+  border: 1px solid #111;
+  border-radius: 3px;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/*this is for the gantt chart grid, one wide column for task names, 7 for days*/
 .gantt {
   display: grid;
-  grid-template-columns: 140px repeat(7, 1fr);
+  grid-template-columns: 220px repeat(7, 1fr);
+  margin-top: 10px;
 }
 
 /*this is for every little box in the chart*/
@@ -83,13 +98,13 @@ h1, h2 { font-size: 1.25rem; margin: 0 0 1.25rem; }
 }
 
 /*this is for the bars, a thin line inside the day cell, grey normal, black critical*/
-.bar { 
-  width: 100%; 
-  height: 12px; 
+.bar {
+  width: 100%;
+  height: 12px;
   background: #d4d4d4; }
-
 .bar.crit { background: #343434; }
 
+/*this is all for add task*/
 /*this is for the add task form, a grid with two columns*/
 .add-task {
   display: grid;
@@ -126,6 +141,13 @@ h1, h2 { font-size: 1.25rem; margin: 0 0 1.25rem; }
   width: 100%;
 }
 
+/*this is for making the dropdown match the inputs, with a drawn arrow instead of the native one*/
+.add-task select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23111'/></svg>") no-repeat right 10px center;
+}
+
 /*this is for the checkbox, remove the box styling it inherits*/
 .add-task input[type='checkbox'] {
   width: 16px;
@@ -148,9 +170,10 @@ h1, h2 { font-size: 1.25rem; margin: 0 0 1.25rem; }
 
 /*this is for the add button, plain black*/
 .add-task button {
+  margin-top: 15px;
   padding: 8px 14px;
   border: 1px solid #111;
-  border-radius: 0;
+  border-radius: 3px;
   background: #111;
   color: #fff;
   font: inherit;
@@ -161,41 +184,58 @@ h1, h2 { font-size: 1.25rem; margin: 0 0 1.25rem; }
 /*this is for the message when there are no tasks yet*/
 .empty { color: #666; font-size: 14px; }
 
-/*this is for the old template bits, still used by the example page*/
-.btn {
-  padding: 8px 14px;
-  border: 1px solid #111;
-  background: #111;
-  color: #fff;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-.form { display: flex; gap: 8px; margin: 1rem 0; }
-.form input {
-  flex: 1;
-  padding: 8px 10px;
-  border: 1px solid #bbb;
-  font: inherit;
-}
-.list { list-style: none; padding: 0; margin: 0; }
-.list li {
-  border: 1px solid #ddd;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-}
-
-/*this is for the slip buttons under the task name*/
-.slip { margin-top: 4px; }
+/*this is for the action row under the task name, four equal buttons, one style*/
+.slip { margin-top: 6px; }
 .slip button {
   font: inherit;
   font-size: 11px;
   padding: 2px 6px;
   margin-right: 4px;
   border: 1px solid #111;
+  border-radius: 3px;
   background: #fff;
   cursor: pointer;
 }
 
+/*this is for a slip button that cannot be used, greyed out*/
+.slip button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /*this is for the project end date line above the chart*/
 .ends { font-size: 13px; color: #666; margin: 0 0 10px; }
+
+/*this is for the popup backdrop, a dark sheet over the whole screen*/
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*this is for the white box in the middle of the popup*/
+.modal {
+  background: #fff;
+  padding: 20px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 100%;
+  overflow: auto;
+}
+
+/*this is for the little icons, so they sit inline with the words*/
+.who svg, .modal p svg { vertical-align: -2px; margin-right: 3px; }
+
+/*this is for the title row with the add task button on the right*/
+/*this is the one with the Project Timeline and Add Task Button*/
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
