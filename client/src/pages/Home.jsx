@@ -17,163 +17,163 @@ const status_names = { not_done: 'Not done', progress: 'In progress', done: 'Don
 
 //this is for making the list of days, starting today
 function makeDays() {
-  const days = []
-  const now = new Date()
-  for (let i = 0; i < day_count; i++) {
-    days.push(new Date(now.getFullYear(), now.getMonth(), now.getDate() + i))
-  }
-  return days
+	const days = []
+	const now = new Date()
+	for (let i = 0; i < day_count; i++) {
+		days.push(new Date(now.getFullYear(), now.getMonth(), now.getDate() + i))
+	}
+	return days
 }
 
 //this is for turning a date into text like 2026-10-28
 function toDateStr(d) {
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return d.getFullYear() + '-' + m + '-' + day
+	const m = String(d.getMonth() + 1).padStart(2, '0')
+	const day = String(d.getDate()).padStart(2, '0')
+	return d.getFullYear() + '-' + m + '-' + day
 }
 
 //this is for counting the days a date range covers
 function daysBetween(startStr, endStr) {
-  return (new Date(endStr) - new Date(startStr)) / 86400000 + 1
+	return (new Date(endStr) - new Date(startStr)) / 86400000 + 1
 }
 
 //this is for finding a task and every task that waits for it
 function findChain(id, tasks) {
-  const ids = [id]
-  let added = true
-  while (added) {
-    added = false
-    tasks.forEach(t => {
-      if (ids.includes(t.id)) return
-      if (t.dependsOn.some(d => ids.includes(d))) {
-        ids.push(t.id)
-        added = true
-      }
-    })
-  }
-  return ids
+	const ids = [id]
+	let added = true
+	while (added) {
+		added = false
+		tasks.forEach(t => {
+			if (ids.includes(t.id)) return
+			if (t.dependsOn.some(d => ids.includes(d))) {
+				ids.push(t.id)
+				added = true
+			}
+		})
+	}
+	return ids
 }
 
 //this is for one task row
 function GanttRow({ task, days, info, onSlip, canEdit }) {
-  //this is for knowing if the task starts today (then -1 day is blocked)
-  const startsToday = task.startDate <= toDateStr(new Date())
+	//this is for knowing if the task starts today (then -1 day is blocked)
+	const startsToday = task.startDate <= toDateStr(new Date())
 
-  return (
-    <>
-      <div className="cell name">
-        {task.name}
-        <span className={'tag ' + task.priority}>{priority[task.priority]}</span>
-        {task.who && <span className="who">Assigned to {task.who}</span>}
-        {/*this is for the buffer the engine computed*/}
-        {info && <span className="who">{info.critical ? 'No buffer — critical' : info.slack + '-day buffer'}</span>}
-        <span className="who">Status: {status_names[task.status]}</span>
-        {/*this is for slipping the task, only admins see these buttons*/}
-        {canEdit && (
-          <div className="slip">
-            <button disabled={startsToday} onClick={() => onSlip(task.id, -1)}>−1 day</button>
-            <button onClick={() => onSlip(task.id, 1)}>+1 day</button>
-          </div>
-        )}
-      </div>
-      {days.map(d => {
-        //this is for deciding if this day is part of the task
-        const str = toDateStr(d)
-        const inRange = str >= task.startDate && str <= task.endDate
-        return (
-          <div key={d.getTime()} className="cell day">
-            {/*this is for the thin line, only on days the task runs*/}
-            {inRange && <div className={info && info.critical ? 'bar crit' : 'bar'} />}
-          </div>
-        )
-      })}
-    </>
-  )
+	return (
+		<>
+			<div className="cell name">
+				{task.name}
+				<span className={'tag ' + task.priority}>{priority[task.priority]}</span>
+				{task.who && <span className="who">Assigned to {task.who}</span>}
+				{/*this is for the buffer the engine computed*/}
+				{info && <span className="who">{info.critical ? 'No buffer — critical' : info.slack + '-day buffer'}</span>}
+				<span className="who">Status: {status_names[task.status]}</span>
+				{/*this is for slipping the task, only admins see these buttons*/}
+				{canEdit && (
+					<div className="slip">
+						<button disabled={startsToday} onClick={() => onSlip(task.id, -1)}>−1 day</button>
+						<button onClick={() => onSlip(task.id, 1)}>+1 day</button>
+					</div>
+				)}
+			</div>
+			{days.map(d => {
+				//this is for deciding if this day is part of the task
+				const str = toDateStr(d)
+				const inRange = str >= task.startDate && str <= task.endDate
+				return (
+					<div key={d.getTime()} className="cell day">
+						{/*this is for the thin line, only on days the task runs*/}
+						{inRange && <div className={info && info.critical ? 'bar crit' : 'bar'} />}
+					</div>
+				)
+			})}
+		</>
+	)
 }
 
 //this is for the timeline page (the tasks and saving come from the project page)
 export default function Home({ tasks, users, isAdmin, onChange }) {
-  //this is for the days on top of the chart
-  const days = makeDays()
-  const today = toDateStr(new Date())
+	//this is for the days on top of the chart
+	const days = makeDays()
+	const today = toDateStr(new Date())
 
-  //this is for adding a new task, then fixing the dates
-  function addTask(task) {
-    onChange(reschedule([...tasks, task]))
-  }
+	//this is for adding a new task, then fixing the dates
+	function addTask(task) {
+		onChange(reschedule([...tasks, task]))
+	}
 
-  //this is for moving a task and the tasks that wait for it, by a day
-  function slipTask(id, move) {
-    //this is for blocking -1 day when the task starts today
-    const task = tasks.find(t => t.id === id)
-    if (move < 0 && task.startDate <= today) return
+	//this is for moving a task and the tasks that wait for it, by a day
+	function slipTask(id, move) {
+		//this is for blocking -1 day when the task starts today
+		const task = tasks.find(t => t.id === id)
+		if (move < 0 && task.startDate <= today) return
 
-    //this is for moving the task and everything that depends on it
-    const chain = findChain(id, tasks)
-    const moved = tasks.map(t => {
-      if (!chain.includes(t.id)) return t
-      const s = new Date(t.startDate + 'T00:00:00')
-      const e = new Date(t.endDate + 'T00:00:00')
-      s.setDate(s.getDate() + move)
-      e.setDate(e.getDate() + move)
-      return { ...t, startDate: toDateStr(s), endDate: toDateStr(e) }
-    })
-    onChange(reschedule(moved))
-  }
+		//this is for moving the task and everything that depends on it
+		const chain = findChain(id, tasks)
+		const moved = tasks.map(t => {
+			if (!chain.includes(t.id)) return t
+			const s = new Date(t.startDate + 'T00:00:00')
+			const e = new Date(t.endDate + 'T00:00:00')
+			s.setDate(s.getDate() + move)
+			e.setDate(e.getDate() + move)
+			return { ...t, startDate: toDateStr(s), endDate: toDateStr(e) }
+		})
+		onChange(reschedule(moved))
+	}
 
-  //this is for translating tasks into engine format (dates become day counts)
-  const engineTasks = tasks.map(t => ({
-    id: t.id,
-    days: daysBetween(t.startDate, t.endDate),
-    //this is for how many days after today the task starts
-    startDay: (new Date(t.startDate) - new Date(today)) / 86400000,
-    dependsOn: t.dependsOn,
-  }))
+	//this is for translating tasks into engine format (dates become day counts)
+	const engineTasks = tasks.map(t => ({
+		id: t.id,
+		days: daysBetween(t.startDate, t.endDate),
+		//this is for how many days after today the task starts
+		startDay: (new Date(t.startDate) - new Date(today)) / 86400000,
+		dependsOn: t.dependsOn,
+	}))
 
-  //this is for the end date of the whole plan, written like "Fri 30"
-  let endsText = ''
-  if (tasks.length > 0) {
-    const last = new Date(tasks.map(t => t.endDate).sort()[tasks.length - 1] + 'T00:00:00')
-    endsText = day_names[last.getDay()] + ' ' + last.getDate()
-  }
+	//this is for the end date of the whole plan, written like "Fri 30"
+	let endsText = ''
+	if (tasks.length > 0) {
+		const last = new Date(tasks.map(t => t.endDate).sort()[tasks.length - 1] + 'T00:00:00')
+		endsText = day_names[last.getDay()] + ' ' + last.getDate()
+	}
 
-  //this is for running the engine safely (it throws on circles)
-  let analysis = null
-  let error = null
-  try {
-    analysis = analyze(engineTasks)
-  } catch (e) {
-    error = e.message
-  }
+	//this is for running the engine safely (it throws on circles)
+	let analysis = null
+	let error = null
+	try {
+		analysis = analyze(engineTasks)
+	} catch (e) {
+		error = e.message
+	}
 
-  return (
-    <div>
-      <h2>Project Timeline</h2>
+	return (
+		<div>
+			<h2>Project Timeline</h2>
 
-      {/*this is for the add task form, only admins see it*/}
-      {isAdmin && <AddTask onAdd={addTask} tasks={tasks} users={users} />}
+			{/*this is for the add task form, only admins see it*/}
+			{isAdmin && <AddTask onAdd={addTask} tasks={tasks} users={users} />}
 
-      {/*this is for the plan's end date, it moves when a critical task slips*/}
-      {tasks.length > 0 && <p className="ends">Project ends {endsText}</p>}
+			{/*this is for the plan's end date, it moves when a critical task slips*/}
+			{tasks.length > 0 && <p className="ends">Project ends {endsText}</p>}
 
-      {/*this is for the circle alarm*/}
-      {error && <div className="error-box">Circle detected! ({error})</div>}
+			{/*this is for the circle alarm*/}
+			{error && <div className="error-box">Circle detected! ({error})</div>}
 
-      <div className="gantt">
-        <div className="cell head">Task</div>
-        {days.map(d => (
-          <div key={d.getTime()} className="cell head">
-            {day_names[d.getDay()]} {d.getDate()}
-          </div>
-        ))}
-        {tasks.map(t => (
-          <GanttRow key={t.id} task={t} days={days} info={analysis ? analysis[t.id] : null} onSlip={slipTask} canEdit={isAdmin} />
-        ))}
-      </div>
+			<div className="gantt">
+				<div className="cell head">Task</div>
+				{days.map(d => (
+					<div key={d.getTime()} className="cell head">
+						{day_names[d.getDay()]} {d.getDate()}
+					</div>
+				))}
+				{tasks.map(t => (
+					<GanttRow key={t.id} task={t} days={days} info={analysis ? analysis[t.id] : null} onSlip={slipTask} canEdit={isAdmin} />
+				))}
+			</div>
 
-      {tasks.length === 0 && (
-        <p className="empty">{isAdmin ? 'No tasks yet. Add your first one above.' : 'No tasks yet. An admin needs to add them.'}</p>
-      )}
-    </div>
-  )
+			{tasks.length === 0 && (
+				<p className="empty">{isAdmin ? 'No tasks yet. Add your first one above.' : 'No tasks yet. An admin needs to add them.'}</p>
+			)}
+		</div>
+	)
 }
