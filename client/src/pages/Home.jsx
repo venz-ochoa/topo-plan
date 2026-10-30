@@ -92,7 +92,7 @@ function GanttRow({ task, days, info, onSlip, canEdit }) {
 }
 
 //this is for the timeline page (the tasks and saving come from the project page)
-export default function Home({ tasks, isAdmin, onChange }) {
+export default function Home({ tasks, users, isAdmin, onChange }) {
   //this is for the days on top of the chart
   const days = makeDays()
   const today = toDateStr(new Date())
@@ -151,7 +151,7 @@ export default function Home({ tasks, isAdmin, onChange }) {
       <h2>Project Timeline</h2>
 
       {/*this is for the add task form, only admins see it*/}
-      {isAdmin && <AddTask onAdd={addTask} tasks={tasks} />}
+      {isAdmin && <AddTask onAdd={addTask} tasks={tasks} users={users} />}
 
       {/*this is for the plan's end date, it moves when a critical task slips*/}
       {tasks.length > 0 && <p className="ends">Project ends {endsText}</p>}

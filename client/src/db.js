@@ -30,20 +30,16 @@ export function toRow(t, projectId) {
   };
 }
 
-//this is for finding the project the user is in (null if none)
+//this is for finding the user's project and role (null if none)
 export async function getMyProject(userId) {
   const { data, error } = await supabase
-    .from("members")
+    .from("roles")
     .select("role, projects(id, name)")
     .eq("user_id", userId)
-    .limit(1);
+    .maybeSingle();
   if (error) throw error;
-  if (data.length === 0) return null;
-  return {
-    id: data[0].projects.id,
-    name: data[0].projects.name,
-    role: data[0].role,
-  };
+  if (!data) return null;
+  return { id: data.projects.id, name: data.projects.name, role: data.role };
 }
 
 //this is for making a new project (the creator becomes admin)
@@ -58,6 +54,22 @@ export async function createProject(name) {
 export async function joinProject(code) {
   const { error } = await supabase.rpc("join_project", { invite_code: code });
   if (error) throw error;
+}
+
+//this is for getting the names and roles of everyone in the project
+export async function getUsers(projectId) {
+  const { data, error } = await supabase
+    .from("roles")
+    .select("user_id, role, users(name)")
+    .eq("project_id", projectId);
+  if (error) throw error;
+  return data
+    .map((r) => ({
+      id: r.user_id,
+      name: r.users && r.users.name ? r.users.name : "Unnamed",
+      role: r.role,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 //this is for getting all tasks of a project
