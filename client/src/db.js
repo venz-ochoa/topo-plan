@@ -30,30 +30,34 @@ export function toRow(t, projectId) {
   };
 }
 
-//this is for finding the user's project and role (null if none)
-export async function getMyProject(userId) {
+//this is for finding every project the user is in, with their role in each
+export async function getMyProjects(userId) {
   const { data, error } = await supabase
     .from("roles")
     .select("role, projects(id, name)")
-    .eq("user_id", userId)
-    .maybeSingle();
+    .eq("user_id", userId);
   if (error) throw error;
-  if (!data) return null;
-  return { id: data.projects.id, name: data.projects.name, role: data.role };
+  return data
+    .map((r) => ({ id: r.projects.id, name: r.projects.name, role: r.role }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-//this is for making a new project (the creator becomes admin)
+//this is for making a new project (the creator becomes admin), gives back the project id
 export async function createProject(name) {
-  const { error } = await supabase.rpc("create_project", {
+  const { data, error } = await supabase.rpc("create_project", {
     project_name: name,
   });
   if (error) throw error;
+  return data;
 }
 
-//this is for joining a project with an invite code
+//this is for joining a project with an invite code, gives back the project id
 export async function joinProject(code) {
-  const { error } = await supabase.rpc("join_project", { invite_code: code });
+  const { data, error } = await supabase.rpc("join_project", {
+    invite_code: code,
+  });
   if (error) throw error;
+  return data;
 }
 
 //this is for getting the names and roles of everyone in the project
@@ -70,6 +74,28 @@ export async function getUsers(projectId) {
       role: r.role,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+//this is for getting the user's own name
+export async function getMyName(userId) {
+  const { data, error } = await supabase
+    .from("users")
+    .select("name")
+    .eq("id", userId)
+    .single();
+  if (error) throw error;
+  return data.name;
+}
+
+//this is for saving the user's own name
+export async function saveMyName(userId, name) {
+  const { data, error } = await supabase
+    .from("users")
+    .update({ name: name })
+    .eq("id", userId)
+    .select("name");
+  if (error) throw error;
+  if (data.length === 0) throw new Error("Could not save the name");
 }
 
 //this is for getting all tasks of a project
