@@ -1,4 +1,5 @@
 import { sortTasks } from "./graph.js";
+import { analyze } from "./cpm.js";
 
 //this is for making a date from text like 2026-10-28
 function toDate(str) {
@@ -58,6 +59,28 @@ export function reschedule(tasks) {
 
   //this is for keeping the same order as before
   return tasks.map((t) => done[t.id]);
+}
+
+//this is for counting the days a date range covers
+function daysBetween(startStr, endStr) {
+  return (new Date(endStr) - new Date(startStr)) / 86400000 + 1;
+}
+
+//this is for running the critical path engine on the project's tasks (gives back analysis or an error)
+export function analyzeTasks(tasks) {
+  const today = toDateStr(new Date());
+  const engineTasks = tasks.map((t) => ({
+    id: t.id,
+    days: daysBetween(t.startDate, t.endDate),
+    //this is for how many days after today the task starts
+    startDay: (new Date(t.startDate) - new Date(today)) / 86400000,
+    dependsOn: t.dependsOn,
+  }));
+  try {
+    return { analysis: analyze(engineTasks), error: null };
+  } catch (e) {
+    return { analysis: null, error: e.message };
+  }
 }
 
 //this is for moving a task (and the tasks that wait for it) by some days, then fixing the dates

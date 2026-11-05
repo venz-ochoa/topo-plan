@@ -2,14 +2,14 @@
 import { NavLink } from 'react-router-dom';
 
 export default function Navbar() {
-  return (
+return (
     <nav className="navbar">
-      <NavLink to="/" className="brand">
+    <NavLink to="/" className="brand">
         <span>TopoPlan</span>
-      </NavLink>
-      <div className="links">
+    </NavLink>
+    <div className="links">
         <NavLink to="/">Home</NavLink>
-      </div>
+    </div>
     </nav>
-  );
+);
 }

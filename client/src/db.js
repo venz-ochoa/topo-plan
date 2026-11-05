@@ -36,7 +36,9 @@ function requestFromRow(r) {
     id: r.id,
     taskId: r.task_id,
     requestedBy: r.requested_by,
+    kind: r.kind,
     days: r.days,
+    newStatus: r.new_status,
     reason: r.reason,
     status: r.status,
     createdAt: r.created_at,
@@ -131,7 +133,7 @@ export async function saveTasks(projectId, tasks) {
   if (error) throw error;
 }
 
-//this is for changing the status of one task (only the person it is assigned to)
+//this is for an admin changing the status of a task assigned to themselves
 export async function updateStatus(taskId, status) {
   const { error } = await supabase.rpc("set_task_status", {
     task_id: taskId,
@@ -151,21 +153,31 @@ export async function getRequests(projectId) {
   return data.map(requestFromRow);
 }
 
-//this is for asking the admin to move a task (days is 1 for later or -1 for earlier)
-export async function requestChange(projectId, taskId, userId, days, reason) {
-  const { error } = await supabase
-    .from("requests")
-    .insert({
-      project_id: projectId,
-      task_id: taskId,
-      requested_by: userId,
-      days: days,
-      reason: reason,
-    });
+//this is for asking the admin for a change: kind 'status' (with newStatus) or 'extension' (days is 1 or -1)
+export async function sendRequest({
+  projectId,
+  taskId,
+  userId,
+  kind,
+  days,
+  newStatus,
+  reason,
+}) {
+  const { error } = await supabase.from("requests").insert({
+    project_id: projectId,
+    task_id: taskId,
+    requested_by: userId,
+    kind: kind,
+    days: days,
+    new_status: newStatus,
+    reason: reason,
+  });
   if (error) {
-    //this is for the friendly message when a request is already waiting
+    //this is for the friendly message when the same kind of request is already waiting
     if (error.code === "23505")
-      throw new Error("You already have a request waiting for this task.");
+      throw new Error(
+        "You already have a request of this kind waiting for this task.",
+      );
     throw error;
   }
 }

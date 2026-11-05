@@ -19,3 +19,10 @@ export function daysText(days) {
   const n = Math.abs(days);
   return n + (n === 1 ? " day" : " days") + (days > 0 ? " later" : " earlier");
 }
+
+//this is for describing a request like "change the status to Underway" or "move it 1 day later"
+export function requestText(r) {
+  if (r.kind === "status")
+    return "change the status to " + status_names[r.newStatus];
+  return "move it " + daysText(r.days);
+}
