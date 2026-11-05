@@ -10,7 +10,7 @@ sendRequest, decideRequest, makeInvite, toRow,
 } from '../db.js'
 import { shiftTask, toDateStr, analyzeTasks } from '../engine/schedule.js'
 
-export default function Project({ project, userId }) {
+export default function Project({ project, userId, initialTaskId = null }) {
 //this is for knowing if the user can edit the timeline
 const isAdmin = project.role === 'admin'
 
@@ -18,8 +18,8 @@ const [tab, setTab] = useState('dashboard')
 const [tasks, setTasks] = useState([])
 const [users, setUsers] = useState([])
 const [requests, setRequests] = useState([])
-//this is for the task whose details panel is open
-const [selectedId, setSelectedId] = useState(null)
+//this is for the task whose details panel is open (it starts open when the user clicked a task on the dashboard)
+const [selectedId, setSelectedId] = useState(initialTaskId)
 const [loading, setLoading] = useState(true)
 const [message, setMessage] = useState('')
 
@@ -162,10 +162,11 @@ const pendingCount = requests.filter(r => r.status === 'pending').length
 return (
     <div>
     <h1>{project.name}</h1>
+    {project.description && <p className="desc">{project.description}</p>}
     <p>You are {isAdmin ? 'an admin' : 'a member'}.</p>
 
     <nav>
-        <button onClick={() => setTab('dashboard')}>Dashboard</button>
+        <button onClick={() => setTab('dashboard')}>Tasks</button>
         <button onClick={() => setTab('timeline')}>Timeline</button>
         <button onClick={() => setTab('requests')}>
         Requests{isAdmin && pendingCount > 0 ? ' (' + pendingCount + ')' : ''}

@@ -49,18 +49,26 @@ function requestFromRow(r) {
 export async function getMyProjects(userId) {
   const { data, error } = await supabase
     .from("roles")
-    .select("role, projects(id, name)")
+    .select("role, projects(id, name, description)")
     .eq("user_id", userId);
   if (error) throw error;
   return data
-    .map((r) => ({ id: r.projects.id, name: r.projects.name, role: r.role }))
+    .map((r) => ({
+      id: r.projects.id,
+      name: r.projects.name,
+      description: r.projects.description || "",
+      role: r.role,
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-//this is for making a new project (the creator becomes admin), gives back the project id
-export async function createProject(name) {
+//this is for making a new project (the creator becomes admin) and making an invite for each email
+//it gives back { id, invites: [{ email, code }] }
+export async function createProject(name, description = "", emails = []) {
   const { data, error } = await supabase.rpc("create_project", {
     project_name: name,
+    project_description: description,
+    invite_emails: emails,
   });
   if (error) throw error;
   return data;
@@ -200,4 +208,80 @@ export async function makeInvite(projectId, role, userId) {
     .single();
   if (error) throw error;
   return data.code;
+}
+
+//this is for the dashboard: the tasks, the number of people and the waiting requests of every project at once
+//(one question per table instead of one per project)
+export async function getOverview(projectIds) {
+  const out = { tasks: {}, members: {}, pending: {} };
+  projectIds.forEach((id) => {
+    out.tasks[id] = [];
+    out.members[id] = 0;
+    out.pending[id] = 0;
+  });
+  if (projectIds.length === 0) return out;
+
+  const [t, r, q] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("*")
+      .in("project_id", projectIds)
+      .order("created_at"),
+    supabase.from("roles").select("project_id").in("project_id", projectIds),
+    supabase
+      .from("requests")
+      .select("project_id")
+      .eq("status", "pending")
+      .in("project_id", projectIds),
+  ]);
+  if (t.error) throw t.error;
+  if (r.error) throw r.error;
+  if (q.error) throw q.error;
+
+  t.data.forEach((row) => out.tasks[row.project_id].push(fromRow(row)));
+  r.data.forEach((row) => (out.members[row.project_id] += 1));
+  //this is for admins only: members only see their own requests, so the number would be misleading
+  q.data.forEach((row) => (out.pending[row.project_id] += 1));
+  return out;
+}
+
+//this is for the invites waiting for the logged in user's email address
+export async function getMyInvites() {
+  const { data, error } = await supabase.rpc("my_pending_invites");
+  if (error) throw error;
+  return data.map((r) => ({
+    code: r.code,
+    projectId: r.project_id,
+    projectName: r.project_name,
+    description: r.project_description,
+    role: r.role,
+    invitedBy: r.invited_by_name,
+    expiresAt: r.expires_at,
+  }));
+}
+
+//this is for saying no to an invite
+export async function declineInvite(code) {
+  const { error } = await supabase.rpc("decline_invite", { invite_code: code });
+  if (error) throw error;
+}
+
+//this is for emailing invites (a Supabase Edge Function does the sending, only the codes go to it)
+//it gives back { sent: [{code}], failed: [{code, error}], skipped: [code] } or throws if it could not run at all
+export async function sendInviteEmails(codes) {
+  const { data, error } = await supabase.functions.invoke("send-invite", {
+    body: { codes, siteUrl: window.location.origin + window.location.pathname },
+  });
+  if (error) {
+    //this is for reading the reason the function gave (a failed call keeps the answer in error.context)
+    let reason = error.message;
+    try {
+      const body = await error.context.json();
+      if (body && body.error) reason = body.error;
+    } catch (e) {
+      //this is for keeping the general message when there is no readable answer
+    }
+    throw new Error(reason);
+  }
+  return data;
 }

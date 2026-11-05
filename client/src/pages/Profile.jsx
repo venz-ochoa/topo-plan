@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase.js'
 import { getMyName, saveMyName } from '../db.js'
 
-export default function Profile({ projects, currentId, userId, email, onOpen, onAdd }) {
+export default function Profile({ projects, currentId, userId, email, onOpen, onCreate, onJoin }) {
 //this is for the values in the boxes
 const [name, setName] = useState('')
 const [password, setPassword] = useState('')
@@ -68,15 +68,17 @@ return (
 
     {/*this is for the list of projects, with the role in each one*/}
     <h3>Your projects ({projects.length})</h3>
+    {projects.length === 0 && <p className="empty">You are not in any project yet.</p>}
     <ul>
         {projects.map(p => (
         <li key={p.id}>
             {p.name}: {p.role === 'admin' ? 'Admin' : 'Member'}{' '}
-            {p.id === currentId ? '(open now)' : <button onClick={() => onOpen(p.id)}>Open</button>}
+            <button onClick={() => onOpen(p.id)}>Open</button>
         </li>
         ))}
     </ul>
-    <button onClick={onAdd}>Join or start another project</button>
+    <button onClick={onCreate}>New project</button>{' '}
+    <button onClick={onJoin}>Join with a code</button>
 
     <form className="add-task" onSubmit={handleName}>
         <h3>Change name</h3>

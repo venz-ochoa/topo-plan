@@ -1,27 +1,12 @@
-//this is for the screen where a new user makes a project or joins one
+//this is for the screen where someone joins a project with an invite code (starting a project has its own screen)
 import { useState } from 'react'
-import { createProject, joinProject } from '../db.js'
+import { joinProject } from '../db.js'
 
-export default function TeamSetup({ inviteCode, onDone, onCancel }) {
-//this is for the values in the boxes (the code is filled in if it came from a link)
-const [name, setName] = useState('')
+export default function TeamSetup({ inviteCode, onDone, onCancel, onCreate }) {
+//this is for the value in the box (the code is filled in if it came from a link)
 const [code, setCode] = useState(inviteCode)
 const [error, setError] = useState('')
 const [busy, setBusy] = useState(false)
-
-//this is for making a new project
-async function handleCreate(e) {
-    e.preventDefault()
-    setError('')
-    setBusy(true)
-    try {
-    const id = await createProject(name)
-    onDone(id)
-    } catch (err) {
-    setError(err.message)
-    }
-    setBusy(false)
-}
 
 //this is for joining with an invite code
 async function handleJoin(e) {
@@ -41,8 +26,8 @@ async function handleJoin(e) {
 
 return (
     <div>
-    <h2>Join or start a project</h2>
-    {onCancel && <button type="button" onClick={onCancel}>Back</button>}
+    <h2>Join a project</h2>
+    <button type="button" onClick={onCancel}>Back</button>
 
     {error && <div className="error-box" role="alert">{error}</div>}
 
@@ -57,16 +42,7 @@ return (
         </div>
     </form>
 
-    <form className="add-task" onSubmit={handleCreate}>
-        <h3>Start a new project (you become the admin)</h3>
-        <div className="field span-2">
-        <label htmlFor="project-name">Project name</label>
-        <input id="project-name" required maxLength={80} value={name} onChange={e => setName(e.target.value)} />
-        </div>
-        <div className="form-footer">
-        <button type="submit" disabled={busy}>Create project</button>
-        </div>
-    </form>
+    <p>Want to start your own instead? <button type="button" onClick={onCreate}>New project</button></p>
     </div>
 )
 }

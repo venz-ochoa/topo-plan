@@ -61,7 +61,8 @@ button:disabled {
 }
 
 input,
-select {
+select,
+textarea {
   font: inherit;
   max-width: 100%;
   padding: 6px 8px;
@@ -73,7 +74,8 @@ select {
 
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+textarea:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
@@ -349,4 +351,156 @@ nav {
 
 .modal-body h3 {
   margin: 8px 0 0;
+}
+
+/* this is for the main button of a screen (filled, so it stands out from the plain ones) */
+button.primary {
+  color: #fff;
+  background: var(--ink);
+}
+
+button.primary:hover:not(:disabled) {
+  background: #000;
+}
+
+.link.small {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+/* this is for the dashboard of all projects: one card per project */
+.project-card {
+  margin: 16px 0;
+  padding: 16px;
+  border: 2px solid var(--line);
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-head h2 {
+  margin: 0;
+}
+
+/* this pushes the Open project button to the right edge of the card header */
+.card-head button {
+  margin-left: auto;
+}
+
+.desc {
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.progress-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.progress {
+  flex: 1 1 160px;
+  max-width: 320px;
+  height: 10px;
+  background: var(--free);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--crit);
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 12px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+/* overdue and waiting-request counts: dark red text plus the words, never color alone */
+.stats .warn {
+  color: #842029;
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px 16px;
+}
+
+.group h4 {
+  margin: 8px 0 6px;
+}
+
+.task-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border: 1px solid var(--line);
+}
+
+.empty-state {
+  margin: 24px 0;
+  padding: 24px;
+  border: 2px dashed var(--line);
+}
+
+/* this is for the email box and its Add button, and for the invited people shown as chips */
+.invite-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.invite-row input {
+  flex: 1 1 220px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.chip button {
+  padding: 0 6px;
+  line-height: 1.2;
+  border-width: 1px;
+  border-radius: 10px;
 }

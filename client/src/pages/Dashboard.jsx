@@ -1,12 +1,6 @@
-//this is for the dashboard with four lists of tasks
+//this is for the task lists of ONE project (the Tasks tab); the dashboard of all projects is Overview.jsx
 import { status_names } from '../labels.js'
-
-//this is for turning a date into text like 2026-10-28
-function toDateStr(d) {
-const m = String(d.getMonth() + 1).padStart(2, '0')
-const day = String(d.getDate()).padStart(2, '0')
-return d.getFullYear() + '-' + m + '-' + day
-}
+import { groupTasks } from '../engine/summary.js'
 
 //this is for one list with a title
 function TaskList({ title, tasks, userId, onOpen, empty }) {
@@ -29,15 +23,8 @@ return (
 
 //this is for the dashboard
 export default function Dashboard({ tasks, userId, onOpen }) {
-const today = toDateStr(new Date())
-const weekAgo = new Date()
-weekAgo.setDate(weekAgo.getDate() - 7)
-
 //this is for sorting the tasks into the four lists
-const ready = tasks.filter(t => t.status === 'not_done' && t.startDate <= today)
-const underway = tasks.filter(t => t.status === 'progress')
-const later = tasks.filter(t => t.status === 'not_done' && t.startDate > today)
-const complete = tasks.filter(t => t.status === 'done' && t.finishedAt && new Date(t.finishedAt) >= weekAgo)
+const { ready, underway, later, complete } = groupTasks(tasks)
 
 return (
     <div className="dash">
