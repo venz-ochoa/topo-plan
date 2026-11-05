@@ -7,7 +7,7 @@ const kind_names = { status: 'Change the status', extension: 'Move the dates' }
 
 export default function TaskDetails({
 task, tasks, users, userId, isAdmin, info, requests, message,
-onClose, onStatus, onAssign, onAsk, onDecide,
+onClose, onStatus, onAssign, onAsk, onDecide, onDelete,
 }) {
 const dialogRef = useRef(null)
 
@@ -101,6 +101,9 @@ return (
             </select>
         </div>
         )}
+
+        {/*this is for admins to delete the task*/}
+        {isAdmin && <button type="button" onClick={() => onDelete(task.id)}>Delete task</button>}
 
         <h3>Status</h3>
         <p><span className={'status status-' + task.status}>{status_names[task.status]}</span></p>

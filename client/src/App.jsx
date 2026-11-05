@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
-import { getMyProjects } from './db.js'
+import { getMyProjects, getNotifications, markAllRead, onChange } from './db.js'
 import Login from './pages/Login.jsx'
 import SignUp from './pages/Signup.jsx'
 import TeamSetup from './pages/Teamsetup.jsx'
@@ -8,6 +8,7 @@ import Project from './pages/Project.jsx'
 import Profile from './pages/Profile.jsx'
 import Overview from './pages/Overview.jsx'
 import CreateProject from './pages/CreateProject.jsx'
+import Notifications from './pages/Notifications.jsx'
 
 export default function App() {
 	//this is for the logged in user (null means nobody)
@@ -23,6 +24,8 @@ export default function App() {
 	const [inviteCode, setInviteCode] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get('join') || '')
 	//this is for which page shows: 'dashboard' (all projects), 'project', 'profile', 'create' or 'join'
 	const [view, setView] = useState(inviteCode ? 'join' : 'dashboard')
+	//this is for the user's notifications
+	const [notes, setNotes] = useState([])
 	//this is for a task to open straight away when the user clicks it on the dashboard
 	const [openTaskId, setOpenTaskId] = useState(null)
 
@@ -55,6 +58,23 @@ export default function App() {
 			return
 		}
 		loadProjects()
+		//this is for updating the list when someone joins, leaves or is removed (live updates)
+		return onChange(['roles'], loadProjects)
+	}, [userId])
+
+	//this is for loading the notifications now and whenever a new one arrives (live updates)
+	async function loadNotes() {
+		try {
+			setNotes(await getNotifications())
+		} catch (e) {
+			//this is for ignoring a failed load, the next change will try again
+		}
+	}
+
+	useEffect(() => {
+		if (!userId) return
+		loadNotes()
+		return onChange(['notifications'], loadNotes)
 	}, [userId])
 
 	//this is for after creating or joining a project: open it
@@ -82,6 +102,7 @@ export default function App() {
 			: <SignUp onSwitch={() => setScreen('login')} />
 	}
 
+	const unread = notes.filter(n => !n.read).length
 	const hasProjects = projects && projects.length > 0
 	const current = hasProjects ? projects.find(p => p.id === currentId) : null
 	//this is for never showing an empty project page: fall back to the dashboard
@@ -101,6 +122,7 @@ export default function App() {
 					</select>
 				)}
 				<button onClick={() => setView('create')}>New project</button>
+				<button onClick={() => setView('notifications')}>Notifications{unread > 0 ? ' (' + unread + ')' : ''}</button>
 				<button onClick={() => setView('profile')}>Profile</button>
 				<button onClick={() => supabase.auth.signOut()}>Log out</button>
 			</nav>
@@ -134,6 +156,15 @@ export default function App() {
 				<TeamSetup inviteCode={inviteCode} onDone={afterJoin} onCancel={() => { setInviteCode(''); setView('dashboard') }} onCreate={() => setView('create')} />
 			)}
 
+			{shown === 'notifications' && (
+				<Notifications
+					notes={notes}
+					projects={projects || []}
+					onMarkRead={async () => { await markAllRead(); loadNotes() }}
+					onOpen={id => openProject(id)}
+				/>
+			)}
+
 			{projects && shown === 'profile' && (
 				<Profile
 					projects={projects}
@@ -147,7 +178,7 @@ export default function App() {
 			)}
 
 			{projects && shown === 'project' && current && (
-				<Project key={current.id + ':' + (openTaskId || '')} project={current} userId={userId} initialTaskId={openTaskId} />
+				<Project key={current.id + ':' + (openTaskId || '')} project={current} userId={userId} initialTaskId={openTaskId} onLeft={loadProjects} />
 			)}
 		</div>
 	)

@@ -1,6 +1,6 @@
 //this is for the dashboard of ALL the user's projects: a summary and the tasks of each one, plus waiting invitations
 import { useState, useEffect } from 'react'
-import { getOverview, getMyInvites, joinProject, declineInvite } from '../db.js'
+import { getOverview, getMyInvites, joinProject, declineInvite, onChange } from '../db.js'
 import { status_names } from '../labels.js'
 import { groupTasks, summarizeProject, isOverdue } from '../engine/summary.js'
 
@@ -120,6 +120,9 @@ export default function Overview({ projects, userId, onOpenProject, onOpenTask, 
 		return () => { cancelled = true }
 	}, [projectKey, tick])
 
+	//this is for reloading the dashboard when anything changes (live updates)
+	useEffect(() => onChange(['tasks', 'requests', 'roles'], () => setTick(t => t + 1)), [])
+
 	//this is for accepting an invitation: the project then shows up as a new card
 	async function accept(code) {
 		setInviteError('')
@@ -155,7 +158,6 @@ export default function Overview({ projects, userId, onOpenProject, onOpenTask, 
 			<nav aria-label="Dashboard actions">
 				<button type="button" className="primary" onClick={onCreate}>New project</button>
 				<button type="button" onClick={onJoin}>Join with a code</button>
-				<button type="button" onClick={() => { setInviteError(''); setTick(t => t + 1) }}>Refresh</button>
 			</nav>
 
 			{error && <div className="error-box" role="alert">{error}</div>}

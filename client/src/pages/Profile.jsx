@@ -8,10 +8,12 @@ export default function Profile({ projects, currentId, userId, email, onOpen, on
 const [name, setName] = useState('')
 const [password, setPassword] = useState('')
 const [again, setAgain] = useState('')
+const [newEmail, setNewEmail] = useState('')
 
 //this is for the messages under each form (bad = true shows it as an error)
 const [nameMsg, setNameMsg] = useState({ text: '', bad: false })
 const [passMsg, setPassMsg] = useState({ text: '', bad: false })
+const [emailMsg, setEmailMsg] = useState({ text: '', bad: false })
 const [busy, setBusy] = useState(false)
 
 //this is for loading the current name when the page opens
@@ -36,6 +38,20 @@ async function handleName(e) {
     setNameMsg({ text: err.message, bad: true })
     }
     setBusy(false)
+}
+
+//this is for changing the email (Supabase sends a confirmation link, the email changes after it is clicked)
+async function handleEmail(e) {
+    e.preventDefault()
+    setBusy(true)
+    const { error } = await supabase.auth.updateUser({ email: newEmail.trim().toLowerCase() })
+    setBusy(false)
+    if (error) {
+    setEmailMsg({ text: error.message, bad: true })
+    return
+    }
+    setNewEmail('')
+    setEmailMsg({ text: 'Check your inbox. Click the link we sent to confirm the new email.', bad: false })
 }
 
 //this is for changing the password
@@ -91,6 +107,20 @@ return (
         )}
         <div className="form-footer">
         <button type="submit" disabled={busy}>Save name</button>
+        </div>
+    </form>
+
+    <form className="add-task" onSubmit={handleEmail}>
+        <h3>Change email</h3>
+        <div className="field span-2">
+        <label htmlFor="profile-email">New email</label>
+        <input id="profile-email" type="email" required value={newEmail} onChange={e => setNewEmail(e.target.value)} />
+        </div>
+        {emailMsg.text && (
+        <div className={emailMsg.bad ? 'error-box' : ''} role={emailMsg.bad ? 'alert' : 'status'}>{emailMsg.text}</div>
+        )}
+        <div className="form-footer">
+        <button type="submit" disabled={busy}>Change email</button>
         </div>
     </form>
 

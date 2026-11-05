@@ -6,11 +6,11 @@ import Requests from './Requests.jsx'
 import TaskDetails from '../components/TaskDetails.jsx'
 import {
 getTasks, getUsers, getRequests, saveTasks, updateStatus,
-sendRequest, decideRequest, makeInvite, toRow,
+sendRequest, decideRequest, makeInvite, toRow, deleteTask, removeFromProject, onChange,
 } from '../db.js'
 import { shiftTask, toDateStr, analyzeTasks } from '../engine/schedule.js'
 
-export default function Project({ project, userId, initialTaskId = null }) {
+export default function Project({ project, userId, initialTaskId = null, onLeft }) {
 //this is for knowing if the user can edit the timeline
 const isAdmin = project.role === 'admin'
 
@@ -27,11 +27,10 @@ const [message, setMessage] = useState('')
 const [inviteRole, setInviteRole] = useState('member')
 const [invite, setInvite] = useState(null)
 
-//this is for loading everything when the page opens, then checking for new requests every 30 seconds
+//this is for loading everything when the page opens, then again whenever anyone changes something (live updates)
 useEffect(() => {
     load()
-    const timer = setInterval(loadRequests, 30000)
-    return () => clearInterval(timer)
+    return onChange(['tasks', 'requests', 'roles'], load)
 }, [])
 
 async function load() {
@@ -141,6 +140,33 @@ async function decide(req, approve) {
     loadRequests()
 }
 
+//this is for deleting a task (the tasks that waited for it stop waiting)
+async function removeTask(id) {
+    if (!confirm('Delete this task?')) return
+    setMessage('')
+    try {
+    await deleteTask(id)
+    setSelectedId(null)
+    await changeTasks(tasks.filter(t => t.id !== id).map(t => ({ ...t, dependsOn: t.dependsOn.filter(d => d !== id) })))
+    } catch (e) {
+    setMessage(e.message)
+    }
+}
+
+//this is for leaving the project (yourself) or removing a member (admins only)
+async function removePerson(person) {
+    const self = person.id === userId
+    if (!confirm(self ? 'Leave ' + project.name + '?' : 'Remove ' + person.name + ' from the project?')) return
+    setMessage('')
+    try {
+    await removeFromProject(project.id, person.id)
+    if (self) onLeft()
+    else load()
+    } catch (e) {
+    setMessage(e.message)
+    }
+}
+
 //this is for making an invite link
 async function handleInvite() {
     setMessage('')
@@ -163,7 +189,7 @@ return (
     <div>
     <h1>{project.name}</h1>
     {project.description && <p className="desc">{project.description}</p>}
-    <p>You are {isAdmin ? 'an admin' : 'a member'}.</p>
+    <p>You are {isAdmin ? 'an admin' : 'a member'}. <button onClick={() => removePerson({ id: userId })}>Leave project</button></p>
 
     <nav>
         <button onClick={() => setTab('dashboard')}>Tasks</button>
@@ -172,7 +198,6 @@ return (
         Requests{isAdmin && pendingCount > 0 ? ' (' + pendingCount + ')' : ''}
         </button>
         {isAdmin && <button onClick={() => setTab('invite')}>Invite</button>}
-        <button onClick={load}>Refresh</button>
     </nav>
 
     {message && <div className="error-box" role="alert">{message}</div>}
@@ -194,6 +219,7 @@ return (
         onAssign={assign}
         onAsk={ask}
         onDecide={decide}
+        onDelete={removeTask}
         />
     )}
 
@@ -224,7 +250,10 @@ return (
 
         <h3>Team ({users.length})</h3>
         {users.map(u => (
-            <p key={u.id}>{u.name} ({u.role})</p>
+            <p key={u.id}>
+            {u.name} ({u.role})
+            {u.id !== userId && <button onClick={() => removePerson(u)}>Remove</button>}
+            </p>
         ))}
         </div>
     )}

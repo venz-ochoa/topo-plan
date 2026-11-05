@@ -266,22 +266,60 @@ export async function declineInvite(code) {
   if (error) throw error;
 }
 
-//this is for emailing invites (a Supabase Edge Function does the sending, only the codes go to it)
-//it gives back { sent: [{code}], failed: [{code, error}], skipped: [code] } or throws if it could not run at all
-export async function sendInviteEmails(codes) {
-  const { data, error } = await supabase.functions.invoke("send-invite", {
-    body: { codes, siteUrl: window.location.origin + window.location.pathname },
+//this is for deleting a task (admins only)
+export async function deleteTask(taskId) {
+  const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+  if (error) throw error;
+}
+
+//this is for leaving a project (userId is yourself) or removing a member (admins only)
+export async function removeFromProject(projectId, userId) {
+  const { error } = await supabase.rpc("remove_from_project", {
+    pid: projectId,
+    uid: userId,
   });
-  if (error) {
-    //this is for reading the reason the function gave (a failed call keeps the answer in error.context)
-    let reason = error.message;
-    try {
-      const body = await error.context.json();
-      if (body && body.error) reason = body.error;
-    } catch (e) {
-      //this is for keeping the general message when there is no readable answer
-    }
-    throw new Error(reason);
-  }
+  if (error) throw error;
+}
+
+//this is for running a function whenever rows change in these tables (live updates)
+//it waits a moment so many quick changes only cause one reload, and gives back a function that stops listening
+export function onChange(tables, callback) {
+  let timer;
+  const run = () => {
+    clearTimeout(timer);
+    timer = setTimeout(callback, 300);
+  };
+  const channel = supabase.channel("live-" + crypto.randomUUID());
+  tables.forEach((table) =>
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table },
+      run,
+    ),
+  );
+  channel.subscribe();
+  return () => {
+    clearTimeout(timer);
+    supabase.removeChannel(channel);
+  };
+}
+
+//this is for getting the user's latest notifications (the database only gives back their own)
+export async function getNotifications() {
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
   return data;
+}
+
+//this is for marking all of the user's notifications as read
+export async function markAllRead() {
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read: true })
+    .eq("read", false);
+  if (error) throw error;
 }
