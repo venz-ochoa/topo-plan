@@ -2,7 +2,7 @@
 import { useState } from 'react'
 
 export default function AddTask({ onAdd, tasks, users }) {
-  //this is for the values in the boxes
+  //this is for the values in the boxes (who is the typed name, it is turned into a person below)
   const [name, setName] = useState('')
   const [who, setWho] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -10,7 +10,7 @@ export default function AddTask({ onAdd, tasks, users }) {
   const [priority, setPriority] = useState('med')
   //this is for the task that must finish first (one dependency, shown in the dropdown)
   const [dep, setDep] = useState('')
-  //this is for the message when the typed name is not a member
+  //this is for the message when the typed name is not in the project
   const [error, setError] = useState('')
 
   //this is for saving the task when the button is clicked
@@ -19,9 +19,9 @@ export default function AddTask({ onAdd, tasks, users }) {
     if (!name || !startDate || !endDate) return
     if (endDate < startDate) return
 
-    //this is for making sure the assigned person is a real user in the project (empty is fine)
+    //this is for making sure the assigned person is in the project
     const person = users.find(u => u.name.toLowerCase() === who.trim().toLowerCase())
-    if (who.trim() && !person) {
+    if (!person) {
       setError('Pick a name from the list.')
       return
     }
@@ -31,7 +31,7 @@ export default function AddTask({ onAdd, tasks, users }) {
     onAdd({
       id: crypto.randomUUID(),
       name: name,
-      who: person ? person.name : '',
+      assignedTo: person.id,
       startDate: startDate,
       endDate: endDate,
       priority: priority,
@@ -57,9 +57,9 @@ export default function AddTask({ onAdd, tasks, users }) {
       {/*this is for the user list, typing searches the names*/}
       <div className="field">
         <label htmlFor="task-who">Assigned to</label>
-        <input id="task-who" list="member-names" autoComplete="off" value={who}
+        <input id="task-who" list="user-names" autoComplete="off" required value={who}
           onChange={e => setWho(e.target.value)} placeholder="Type to search" />
-        <datalist id="member-names">
+        <datalist id="user-names">
           {users.map(u => (
             <option key={u.id} value={u.name}>{u.role}</option>
           ))}

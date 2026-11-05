@@ -6,7 +6,7 @@ function fromRow(r) {
   return {
     id: r.id,
     name: r.name,
-    who: r.who,
+    assignedTo: r.assigned_to,
     startDate: r.start_date,
     endDate: r.end_date,
     priority: r.priority,
@@ -22,11 +22,24 @@ export function toRow(t, projectId) {
     id: t.id,
     project_id: projectId,
     name: t.name,
-    who: t.who,
+    assigned_to: t.assignedTo || null,
     start_date: t.startDate,
     end_date: t.endDate,
     priority: t.priority,
     depends_on: t.dependsOn,
+  };
+}
+
+//this is for turning a request row into the shape the app uses
+function requestFromRow(r) {
+  return {
+    id: r.id,
+    taskId: r.task_id,
+    requestedBy: r.requested_by,
+    days: r.days,
+    reason: r.reason,
+    status: r.status,
+    createdAt: r.created_at,
   };
 }
 
@@ -60,22 +73,6 @@ export async function joinProject(code) {
   return data;
 }
 
-//this is for getting the names and roles of everyone in the project
-export async function getUsers(projectId) {
-  const { data, error } = await supabase
-    .from("roles")
-    .select("user_id, role, users(name)")
-    .eq("project_id", projectId);
-  if (error) throw error;
-  return data
-    .map((r) => ({
-      id: r.user_id,
-      name: r.users && r.users.name ? r.users.name : "Unnamed",
-      role: r.role,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
-
 //this is for getting the user's own name
 export async function getMyName(userId) {
   const { data, error } = await supabase
@@ -98,6 +95,22 @@ export async function saveMyName(userId, name) {
   if (data.length === 0) throw new Error("Could not save the name");
 }
 
+//this is for getting the names and roles of everyone in the project
+export async function getUsers(projectId) {
+  const { data, error } = await supabase
+    .from("roles")
+    .select("user_id, role, users(name)")
+    .eq("project_id", projectId);
+  if (error) throw error;
+  return data
+    .map((r) => ({
+      id: r.user_id,
+      name: r.users && r.users.name ? r.users.name : "Unnamed",
+      role: r.role,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 //this is for getting all tasks of a project
 export async function getTasks(projectId) {
   const { data, error } = await supabase
@@ -118,11 +131,50 @@ export async function saveTasks(projectId, tasks) {
   if (error) throw error;
 }
 
-//this is for changing the status of one task (admins and members)
+//this is for changing the status of one task (only the person it is assigned to)
 export async function updateStatus(taskId, status) {
   const { error } = await supabase.rpc("set_task_status", {
     task_id: taskId,
     new_status: status,
+  });
+  if (error) throw error;
+}
+
+//this is for getting the requests (admins see all, members see their own)
+export async function getRequests(projectId) {
+  const { data, error } = await supabase
+    .from("requests")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data.map(requestFromRow);
+}
+
+//this is for asking the admin to move a task (days is 1 for later or -1 for earlier)
+export async function requestChange(projectId, taskId, userId, days, reason) {
+  const { error } = await supabase
+    .from("requests")
+    .insert({
+      project_id: projectId,
+      task_id: taskId,
+      requested_by: userId,
+      days: days,
+      reason: reason,
+    });
+  if (error) {
+    //this is for the friendly message when a request is already waiting
+    if (error.code === "23505")
+      throw new Error("You already have a request waiting for this task.");
+    throw error;
+  }
+}
+
+//this is for an admin approving or denying a request
+export async function decideRequest(requestId, approve) {
+  const { error } = await supabase.rpc("decide_request", {
+    request_id: requestId,
+    approve: approve,
   });
   if (error) throw error;
 }

@@ -1,53 +1,58 @@
 //this is for the dashboard with four lists of tasks
+import { status_names, status_list } from '../labels.js'
 
 //this is for turning a date into text like 2026-10-28
 function toDateStr(d) {
-	const m = String(d.getMonth() + 1).padStart(2, '0')
-	const day = String(d.getDate()).padStart(2, '0')
-	return d.getFullYear() + '-' + m + '-' + day
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return d.getFullYear() + '-' + m + '-' + day
 }
 
 //this is for one list with a title
-function TaskList({ title, tasks, onStatus, empty }) {
-	return (
-		<section>
-		<h3>{title} ({tasks.length})</h3>
-		{tasks.length === 0 && <p className="empty">{empty}</p>}
-		{tasks.map(t => (
-			<div key={t.id} className="dash-task">
-			<strong>{t.name}</strong>
-			<span className="who">{t.startDate} to {t.endDate}</span>
-			{t.who && <span className="who">Assigned to {t.who}</span>}
-			{/*this is for changing the status, everyone can do this*/}
-			<select value={t.status} aria-label={'Status of ' + t.name} onChange={e => onStatus(t.id, e.target.value)}>
-				<option value="not_done">Not done</option>
-				<option value="progress">In progress</option>
-				<option value="done">Done</option>
-			</select>
-			</div>
-		))}
-		</section>
-	)
-	}
+function TaskList({ title, tasks, userId, onStatus, onOpen, empty }) {
+  return (
+    <section>
+      <h3>{title} ({tasks.length})</h3>
+      {tasks.length === 0 && <p className="empty">{empty}</p>}
+      {tasks.map(t => (
+        <div key={t.id} className="dash-task">
+          {/*this is for the task name, clicking it opens the details*/}
+          <button type="button" className="link" onClick={() => onOpen(t.id)}>{t.name}</button>
+          <span className="who">{t.startDate} to {t.endDate}</span>
+          <span className={'status status-' + t.status}>{status_names[t.status]}</span>
+          {t.assignedTo === userId && <span className="who">Assigned to you</span>}
+          {/*this is for changing the status, only the assigned person sees this*/}
+          {t.assignedTo === userId && (
+            <select value={t.status} aria-label={'Status of ' + t.name} onChange={e => onStatus(t.id, e.target.value)}>
+              {status_list.map(s => (
+                <option key={s} value={s}>{status_names[s]}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      ))}
+    </section>
+  )
+}
 
-	//this is for the dashboard
-	export default function Dashboard({ tasks, onStatus }) {
-	const today = toDateStr(new Date())
-	const weekAgo = new Date()
-	weekAgo.setDate(weekAgo.getDate() - 7)
+//this is for the dashboard
+export default function Dashboard({ tasks, userId, onStatus, onOpen }) {
+  const today = toDateStr(new Date())
+  const weekAgo = new Date()
+  weekAgo.setDate(weekAgo.getDate() - 7)
 
-	//this is for sorting the tasks into the four lists
-	const todo = tasks.filter(t => t.status === 'not_done' && t.startDate <= today)
-	const doing = tasks.filter(t => t.status === 'progress')
-	const finished = tasks.filter(t => t.status === 'done' && t.finishedAt && new Date(t.finishedAt) >= weekAgo)
-	const future = tasks.filter(t => t.status === 'not_done' && t.startDate > today)
+  //this is for sorting the tasks into the four lists
+  const ready = tasks.filter(t => t.status === 'not_done' && t.startDate <= today)
+  const underway = tasks.filter(t => t.status === 'progress')
+  const later = tasks.filter(t => t.status === 'not_done' && t.startDate > today)
+  const complete = tasks.filter(t => t.status === 'done' && t.finishedAt && new Date(t.finishedAt) >= weekAgo)
 
-	return (
-		<div className="dash">
-		<TaskList title="To do" tasks={todo} onStatus={onStatus} empty="Nothing to start." />
-		<TaskList title="In progress" tasks={doing} onStatus={onStatus} empty="Nothing in progress." />
-		<TaskList title="Future" tasks={future} onStatus={onStatus} empty="Nothing planned ahead." />
-		<TaskList title="Recently finished (7 days)" tasks={finished} onStatus={onStatus} empty="Nothing finished lately." />
-		</div>
-	)
+  return (
+    <div className="dash">
+      <TaskList title="Ready to start" tasks={ready} userId={userId} onStatus={onStatus} onOpen={onOpen} empty="Nothing to start." />
+      <TaskList title="Underway" tasks={underway} userId={userId} onStatus={onStatus} onOpen={onOpen} empty="Nothing underway." />
+      <TaskList title="Coming later" tasks={later} userId={userId} onStatus={onStatus} onOpen={onOpen} empty="Nothing planned ahead." />
+      <TaskList title="Completed this week" tasks={complete} userId={userId} onStatus={onStatus} onOpen={onOpen} empty="Nothing completed lately." />
+    </div>
+  )
 }

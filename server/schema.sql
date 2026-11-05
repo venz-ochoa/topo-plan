@@ -1,10 +1,10 @@
 -- this is for wiping the old tables and functions
 -- WARNING: this deletes all projects, tasks and invites (your logins stay)
 drop trigger if exists on_auth_user_created on auth.users;
-drop table if exists tasks, invites, members, roles, profiles, users, projects cascade;
+drop table if exists requests, tasks, invites, members, roles, profiles, users, projects cascade;
 drop function if exists is_member(uuid), is_admin(uuid), is_admin(), my_project(),
   my_projects(), my_admin_projects(), project_members(uuid), create_project(text),
-  join_project(text), set_task_status(uuid, text), set_finished_at(), handle_new_user();
+  join_project(text), set_task_status(uuid, text), decide_request(uuid, boolean), on_task_update(), set_finished_at(), handle_new_user();
 
 -- this is for the people (one row per login, it holds the display name)
 create table users (
@@ -40,7 +40,7 @@ create table tasks (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references projects(id) on delete cascade,
   name text not null,
-  who text not null default '',
+  assigned_to uuid references users(id) on delete set null,
   start_date date not null,
   end_date date not null,
   priority text not null default 'med' check (priority in ('high', 'med', 'low')),
@@ -51,10 +51,28 @@ create table tasks (
   check (end_date >= start_date)
 );
 
+-- this is for extension requests (ask to move a task one day earlier or later)
+create table requests (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references projects(id) on delete cascade,
+  task_id uuid not null references tasks(id) on delete cascade,
+  requested_by uuid not null references users(id) on delete cascade,
+  days int not null check (days in (-1, 1)),
+  reason text not null default '' check (char_length(reason) <= 200),
+  status text not null default 'pending' check (status in ('pending', 'approved', 'denied')),
+  created_at timestamptz not null default now(),
+  decided_at timestamptz
+);
+
+create index requests_project_idx on requests (project_id);
+-- this is for allowing only one waiting request per person per task
+create unique index requests_one_pending_idx on requests (task_id, requested_by) where status = 'pending';
+
 -- this is for finding things faster
 create index roles_project_idx on roles (project_id);
 create index invites_project_idx on invites (project_id);
 create index tasks_project_idx on tasks (project_id);
+create index tasks_assigned_idx on tasks (assigned_to);
 
 -- this is for asking "which projects am I in?" and "which ones am I admin of?"
 create or replace function my_projects() returns setof uuid
@@ -90,10 +108,32 @@ create policy "admins make invites" on invites for insert to authenticated
 create policy "see my tasks" on tasks for select to authenticated
   using (project_id in (select my_projects()));
 create policy "admins add tasks" on tasks for insert to authenticated
-  with check (project_id in (select my_admin_projects()));
+  with check (
+    project_id in (select my_admin_projects())
+    and (assigned_to is null or exists (
+      select 1 from roles r where r.user_id = tasks.assigned_to and r.project_id = tasks.project_id))
+  );
 create policy "admins edit tasks" on tasks for update to authenticated
   using (project_id in (select my_admin_projects()))
-  with check (project_id in (select my_admin_projects()));
+  with check (
+    project_id in (select my_admin_projects())
+    and (assigned_to is null or exists (
+      select 1 from roles r where r.user_id = tasks.assigned_to and r.project_id = tasks.project_id))
+  );
+
+alter table requests enable row level security;
+
+-- this is for requests: admins see all of them, everyone else sees only their own
+create policy "see requests" on requests for select to authenticated
+  using (requested_by = auth.uid() or project_id in (select my_admin_projects()));
+-- this is for only letting the assigned person ask, and only as themselves
+create policy "make requests" on requests for insert to authenticated
+  with check (
+    requested_by = auth.uid() and status = 'pending'
+    and exists (
+      select 1 from tasks t
+      where t.id = requests.task_id and t.project_id = requests.project_id and t.assigned_to = auth.uid())
+  );
 
 -- this is for making a user row automatically when someone signs up
 create or replace function handle_new_user() returns trigger
@@ -144,18 +184,23 @@ begin
   return inv.project_id;
 end $$;
 
--- this is for changing ONLY the status of a task in one of your projects
+-- this is for changing ONLY the status of a task, and only if it is assigned to you
 create or replace function set_task_status(task_id uuid, new_status text) returns void
 language plpgsql security definer set search_path = public as $$
 begin
   update tasks set status = new_status
-    where id = task_id and project_id in (select my_projects());
-  if not found then raise exception 'Not allowed'; end if;
+    where id = task_id and assigned_to = auth.uid() and project_id in (select my_projects());
+  if not found then raise exception 'Only the person assigned to this task can change its status'; end if;
 end $$;
 
--- this is for saving the finish time when a task becomes done
-create or replace function set_finished_at() returns trigger language plpgsql as $$
+-- this is for the checks on every task change (guards the status, saves the finish time)
+create or replace function on_task_update() returns trigger language plpgsql as $$
 begin
+  if new.status is distinct from old.status
+     and auth.uid() is not null
+     and new.assigned_to is distinct from auth.uid() then
+    raise exception 'Only the person assigned to this task can change its status';
+  end if;
   if new.status = 'done' and old.status <> 'done' then
     new.finished_at := now();
   elsif new.status <> 'done' then
@@ -165,10 +210,20 @@ begin
 end $$;
 
 create trigger tasks_finished before update on tasks
-  for each row execute function set_finished_at();
+  for each row execute function on_task_update();
+
+-- this is for admins to approve or deny a request (it can only be decided once)
+create or replace function decide_request(request_id uuid, approve boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update requests
+    set status = case when approve then 'approved' else 'denied' end, decided_at = now()
+    where id = request_id and status = 'pending' and project_id in (select my_admin_projects());
+  if not found then raise exception 'Request not found or already decided'; end if;
+end $$;
 
 -- this is for only letting logged in users call the functions
 revoke execute on function my_projects(), my_admin_projects(), create_project(text),
-  join_project(text), set_task_status(uuid, text) from public, anon;
+  join_project(text), set_task_status(uuid, text), decide_request(uuid, boolean) from public, anon;
 grant execute on function my_projects(), my_admin_projects(), create_project(text),
-  join_project(text), set_task_status(uuid, text) to authenticated;
+  join_project(text), set_task_status(uuid, text), decide_request(uuid, boolean) to authenticated;

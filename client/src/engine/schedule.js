@@ -5,13 +5,35 @@ function toDate(str) {
   return new Date(str + "T00:00:00");
 }
 
-//this is for adding days to a date text and giving text back
-function addDays(str, n) {
-  const d = toDate(str);
-  d.setDate(d.getDate() + n);
+//this is for turning a date into text like 2026-10-28
+export function toDateStr(d) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return d.getFullYear() + "-" + m + "-" + day;
+}
+
+//this is for adding days to a date text and giving text back
+export function addDays(str, n) {
+  const d = toDate(str);
+  d.setDate(d.getDate() + n);
+  return toDateStr(d);
+}
+
+//this is for finding a task and every task that waits for it
+export function findChain(id, tasks) {
+  const ids = [id];
+  let added = true;
+  while (added) {
+    added = false;
+    tasks.forEach((t) => {
+      if (ids.includes(t.id)) return;
+      if (t.dependsOn.some((d) => ids.includes(d))) {
+        ids.push(t.id);
+        added = true;
+      }
+    });
+  }
+  return ids;
 }
 
 //this is for moving tasks so they start after the tasks they depend on
@@ -36,4 +58,18 @@ export function reschedule(tasks) {
 
   //this is for keeping the same order as before
   return tasks.map((t) => done[t.id]);
+}
+
+//this is for moving a task (and the tasks that wait for it) by some days, then fixing the dates
+export function shiftTask(tasks, id, days) {
+  const chain = findChain(id, tasks);
+  const moved = tasks.map((t) => {
+    if (!chain.includes(t.id)) return t;
+    return {
+      ...t,
+      startDate: addDays(t.startDate, days),
+      endDate: addDays(t.endDate, days),
+    };
+  });
+  return reschedule(moved);
 }
