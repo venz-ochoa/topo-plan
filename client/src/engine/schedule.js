@@ -1,5 +1,6 @@
 import { sortTasks } from "./graph.js";
 import { analyze } from "./cpm.js";
+import { isWorkday } from "./holidays.js";
 
 //this is for making a date from text like 2026-10-28
 function toDate(str) {
@@ -18,6 +19,30 @@ export function addDays(str, n) {
   const d = toDate(str);
   d.setDate(d.getDate() + n);
   return toDateStr(d);
+}
+
+//this is for the first working day on or after a date
+export function nextWorkday(str) {
+  while (!isWorkday(str)) str = addDays(str, 1);
+  return str;
+}
+
+//this is for moving forward (or back) by working days, skipping weekends and holidays
+export function addWorkdays(str, n) {
+  const step = n < 0 ? -1 : 1;
+  for (let left = Math.abs(n); left > 0; ) {
+    str = addDays(str, step);
+    if (isWorkday(str)) left--;
+  }
+  return str;
+}
+
+//this is for counting the working days from one date to another (both included, at least 1)
+export function workdaysBetween(startStr, endStr) {
+  let count = 0;
+  for (let d = startStr; d <= endStr; d = addDays(d, 1))
+    if (isWorkday(d)) count++;
+  return Math.max(count, 1);
 }
 
 //this is for finding a task and every task that waits for it
@@ -47,19 +72,21 @@ export function reschedule(tasks) {
       return;
     }
     //this is for how many days the task lasts
-    const length = Math.round(
-      (toDate(t.endDate) - toDate(t.startDate)) / 86400000,
-    );
+    const length = workdaysBetween(t.startDate, t.endDate) - 1;
 
     //this is for starting the task the day after its last dependency ends
-    let start = t.startDate;
+    let start = nextWorkday(t.startDate);
     t.dependsOn.forEach((id) => {
       if (!done[id]) return;
-      const next = addDays(done[id].endDate, 1);
+      const next = nextWorkday(addDays(done[id].endDate, 1));
       if (next > start) start = next;
     });
 
-    done[t.id] = { ...t, startDate: start, endDate: addDays(start, length) };
+    done[t.id] = {
+      ...t,
+      startDate: start,
+      endDate: addWorkdays(start, length),
+    };
   });
 
   //this is for keeping the same order as before
@@ -68,7 +95,7 @@ export function reschedule(tasks) {
 
 //this is for counting the days a date range covers
 function daysBetween(startStr, endStr) {
-  return (new Date(endStr) - new Date(startStr)) / 86400000 + 1;
+  return workdaysBetween(startStr, endStr);
 }
 
 //this is for running the critical path engine on the project's tasks (gives back analysis or an error)
@@ -78,7 +105,10 @@ export function analyzeTasks(tasks) {
     id: t.id,
     days: daysBetween(t.startDate, t.endDate),
     //this is for how many days after today the task starts
-    startDay: (new Date(t.startDate) - new Date(today)) / 86400000,
+    startDay:
+      t.startDate > today
+        ? workdaysBetween(today, t.startDate) - 1
+        : -workdaysBetween(t.startDate, today) + 1,
     dependsOn: t.dependsOn,
   }));
   try {
@@ -94,11 +124,9 @@ export function shiftTask(tasks, id, days) {
   const moved = tasks.map((t) => {
     //this is for leaving tasks outside the chain, and complete tasks, where they are
     if (!chain.includes(t.id) || t.status === "done") return t;
-    return {
-      ...t,
-      startDate: addDays(t.startDate, days),
-      endDate: addDays(t.endDate, days),
-    };
+    const length = workdaysBetween(t.startDate, t.endDate) - 1;
+    const start = addWorkdays(nextWorkday(t.startDate), days);
+    return { ...t, startDate: start, endDate: addWorkdays(start, length) };
   });
   return reschedule(moved);
 }

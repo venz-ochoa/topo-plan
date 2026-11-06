@@ -1,5 +1,6 @@
 //this is for the timeline with the gantt chart
 import AddTask from '../components/AddTask.jsx'
+import { isWorkday } from '../engine/holidays.js'
 import { status_names } from '../engine/labels.js'
 
 //this is for the names of the weekdays and months
@@ -81,12 +82,12 @@ const kind = done ? 'done' : info && info.critical ? 'crit' : 'ok'
 const after = task.dependsOn.map(id => tasks.find(t => t.id === id)).filter(Boolean).map(t => t.name)
 
 const label = short(task.startDate) + ' to ' + short(task.endDate) + ' · ' + total + (total === 1 ? ' day' : ' days')
-const tip = task.name + ': ' + label + (done ? ' (done)' : info ? (info.critical ? ' (critical, no buffer)' : ' (' + info.slack + '-day buffer)') : '')
+const tip = task.name + (task.description ? ' - ' + task.description : '') + ': ' + label + (done ? ' (done)' : info ? (info.critical ? ' (critical, no buffer)' : ' (' + info.slack + '-day buffer)') : '')
 
 return (
     <div className={'g-row' + (done ? ' is-done' : '')}>
     {/*this is for the task column: clicking anywhere in it opens the popup*/}
-    <div className="cell name" onClick={() => onOpen(task.id)}>
+    <div className="cell name" title={tip} onClick={() => onOpen(task.id)}>
         <div className="name-line">
         <button type="button" className="link" onClick={e => { e.stopPropagation(); onOpen(task.id) }}>{task.name}</button>
         <span className="tag">{priority[task.priority]}</span>
@@ -108,7 +109,7 @@ return (
     {/*this is for the days of the row: weekend and today shading, with the bar laid on top*/}
     <div className="g-days" style={{ width: days.length * DAY + 'px' }}>
         {days.map(d => (
-        <div key={d.getTime()} className={'g-day' + (toDateStr(d) === toDateStr(new Date()) ? ' today' : '') + (d.getDay() === 0 || d.getDay() === 6 ? ' weekend' : '')} style={{ width: DAY + 'px' }} />
+        <div key={d.getTime()} className={'g-day' + (toDateStr(d) === toDateStr(new Date()) ? ' today' : '') + (!isWorkday(toDateStr(d)) ? ' weekend' : '')} style={{ width: DAY + 'px' }} />
         ))}
         {length > 0 && (
         <button type="button" className={'g-bar ' + kind} title={tip} aria-label={tip} onClick={() => onOpen(task.id)}

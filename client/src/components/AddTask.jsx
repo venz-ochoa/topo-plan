@@ -10,6 +10,7 @@ const [endDate, setEndDate] = useState('')
 const [priority, setPriority] = useState('med')
 //this is for the task that must finish first (one dependency, shown in the dropdown)
 const [dep, setDep] = useState('')
+const [desc, setDesc] = useState('')
 //this is for the message when the typed name is not in the project
 const [error, setError] = useState('')
 
@@ -36,6 +37,7 @@ function handleSubmit(e) {
     startDate: startDate,
     endDate: endDate,
     priority: priority,
+    description: desc,
     dependsOn: dep ? [dep] : [],
     })
 
@@ -46,10 +48,16 @@ function handleSubmit(e) {
     setEndDate('')
     setPriority('med')
     setDep('')
+    setDesc('')
 }
 
 return (
     <form className="add-task" onSubmit={handleSubmit}>
+    <div className="field span-2">
+        <label htmlFor="task-desc">Description (optional)</label>
+        <input id="task-desc" maxLength={300} value={desc} onChange={e => setDesc(e.target.value)} />
+    </div>
+
     <div className="field span-2">
         <label htmlFor="task-name">Task name</label>
         <input id="task-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Build the engine" />
@@ -81,6 +89,7 @@ return (
     <div className="field">
         <label htmlFor="task-start">Start date</label>
         <input id="task-start" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        {startDate && startDate < new Date().toISOString().slice(0, 10) && <span className="who">Past tasks are saved as Complete.</span>}
     </div>
 
     <div className="field">

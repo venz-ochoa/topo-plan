@@ -12,6 +12,7 @@ function fromRow(r) {
     priority: r.priority,
     dependsOn: r.depends_on,
     status: r.status,
+    description: r.description || "",
     finishedAt: r.finished_at,
   };
 }
@@ -27,7 +28,16 @@ export function toRow(t, projectId) {
     end_date: t.endDate,
     priority: t.priority,
     depends_on: t.dependsOn,
+    description: t.description || "",
   };
+}
+
+//this is for adding a task that is already complete (a task from the past)
+export async function addDoneTask(projectId, t) {
+  const { error } = await supabase
+    .from("tasks")
+    .insert({ ...toRow(t, projectId), status: "done" });
+  if (error) throw error;
 }
 
 //this is for turning a request row into the shape the app uses

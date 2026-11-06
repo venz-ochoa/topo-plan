@@ -6,7 +6,7 @@ import Requests from './Requests.jsx'
 import { Loading } from '../components/Contours.jsx'
 import TaskDetails from '../components/TaskDetails.jsx'
 import {
-getTasks, getUsers, getRequests, saveTasks, updateStatus,
+getTasks, getUsers, getRequests, saveTasks, addDoneTask, updateStatus,
 sendRequest, decideRequest, makeInvite, makeEmailInvite, deleteProject, toRow, deleteTask, removeFromProject, setMemberRole, transferOwnership, onChange,
 } from '../db.js'
 import { roleName, roleIcon } from '../engine/labels.js'
@@ -148,7 +148,12 @@ function slip(id, move) {
 }
 
 //this is for adding a task
-function addTask(task) {
+async function addTask(task) {
+    //this is for a task that starts in the past: it is saved as complete
+    if (task.startDate < toDateStr(new Date())) {
+    try { await addDoneTask(project.id, task); load() } catch (e) { setMessage(friendly(e)) }
+    return
+    }
     changeTasks(reschedule([...tasksRef.current, task]))
 }
 
@@ -361,6 +366,7 @@ if (loading) return <Loading />
 const selected = tasks.find(t => t.id === selectedId)
 const { analysis, error: analysisError } = analyzeTasks(tasks)
 const shownTasks = tasks.filter(t => who === 'all' ? true : who === 'mine' ? t.assignedTo === userId : who === 'none' ? !t.assignedTo : t.assignedTo === who)
+const myOpen = tasks.some(t => t.assignedTo === userId && t.status !== 'done')
 const pendingCount = requests.filter(r => r.status === 'pending').length
 
 return (
@@ -368,9 +374,10 @@ return (
     <p className="eyebrow">Project · {roleName(project.role, project.isOwner)}</p>
     <h1>{project.name}</h1>
     {project.description && <p className="desc">{project.description}</p>}
-    {isOwner
-    ? <p className="who">You own this project. To leave, make another admin the owner first (Invite tab), or <button className="link small" onClick={removeProject}>delete the project</button>.</p>
+    {myOpen && isAdmin
+    ? <p className="who">Finish your tasks to be able to leave.</p>
     : <p><button className="link small with-icon" onClick={() => removePerson({ id: userId })}><img src="/icons/leave.svg" alt="" width="16" height="16" /> Leave project</button></p>}
+    {isOwner && <p className="who">You own this project. If you leave, ownership goes to another admin, or <button className="link small" onClick={removeProject}>delete the project</button>.</p>}
 
     {/*this is for the tabs (the open one is underlined)*/}
     <nav className="tabs" aria-label="Project sections">
