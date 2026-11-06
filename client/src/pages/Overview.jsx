@@ -1,7 +1,9 @@
 //this is for the dashboard of ALL the user's projects: a summary and the tasks of each one, plus waiting invitations
+import { roleName } from '../labels.js'
 import { useState, useEffect } from 'react'
 import { getOverview, getMyInvites, joinProject, declineInvite, onChange } from '../db.js'
 import { status_names } from '../labels.js'
+import { Trail, Loading, ProgressTrail } from '../components/Contours.jsx'
 import { groupTasks, summarizeProject, isOverdue } from '../engine/summary.js'
 
 //this is for how many tasks one list shows before "Show all"
@@ -52,7 +54,7 @@ function ProjectCard({ project, tasks, loading, members, pending, userId, onOpen
 		<section className="project-card" aria-labelledby={'proj-' + project.id}>
 			<div className="card-head">
 				<h2 id={'proj-' + project.id}>{project.name}</h2>
-				<span className="tag">{isAdmin ? 'Admin' : 'Member'}</span>
+				<span className="tag">{roleName(project.role, project.isOwner)}</span>
 				<button type="button" onClick={() => onOpenProject(project.id)}>Open project</button>
 			</div>
 
@@ -60,10 +62,7 @@ function ProjectCard({ project, tasks, loading, members, pending, userId, onOpen
 
 			{/*this is for the summary: progress, then the small facts*/}
 			<div className="progress-line">
-				<div className="progress" role="progressbar" aria-label={project.name + ' progress'}
-					aria-valuemin={0} aria-valuemax={100} aria-valuenow={s.percent}>
-					<span style={{ width: s.percent + '%' }} />
-				</div>
+				<ProgressTrail percent={s.percent} label={project.name + ' progress'} />
 				<span className="who">{s.done} of {s.total} {s.total === 1 ? 'task' : 'tasks'} complete ({s.percent}%)</span>
 			</div>
 			<ul className="stats">
@@ -154,10 +153,11 @@ export default function Overview({ projects, userId, onOpenProject, onOpenTask, 
 
 	return (
 		<div>
+			<p className="eyebrow">Overview</p>
 			<h1>Dashboard</h1>
-			<nav aria-label="Dashboard actions">
-				<button type="button" className="primary" onClick={onCreate}>New project</button>
-				<button type="button" onClick={onJoin}>Join with a code</button>
+			<nav className="actions form-footer" aria-label="Dashboard actions">
+				<button type="button" className="primary with-icon" onClick={onCreate}><img src="/icons/plus.svg" alt="" width="18" height="18" /> New project</button>
+				<button type="button" className="with-icon" onClick={onJoin}><img src="/icons/key.svg" alt="" width="18" height="18" /> Join with a code</button>
 			</nav>
 
 			{error && <div className="error-box" role="alert">{error}</div>}
@@ -166,7 +166,7 @@ export default function Overview({ projects, userId, onOpenProject, onOpenTask, 
 			{/*this is for invitations sent to this person's email*/}
 			{invites.length > 0 && (
 				<section aria-labelledby="invites-title">
-					<h2 id="invites-title">Invitations ({invites.length})</h2>
+					<h2 id="invites-title" className="h-ico"><img src="/icons/mail.svg" alt="" width="26" height="26" /> Invitations ({invites.length})</h2>
 					{invites.map(i => (
 						<div key={i.code} className="dash-task">
 							<strong>{i.projectName}</strong>
@@ -175,18 +175,19 @@ export default function Overview({ projects, userId, onOpenProject, onOpenTask, 
 							</span>
 							{i.description && <span>{i.description}</span>}
 							<span className="form-footer">
-								<button type="button" className="primary" disabled={busyCode === i.code} onClick={() => accept(i.code)}>Accept</button>
-								<button type="button" disabled={busyCode === i.code} onClick={() => decline(i.code)}>Decline</button>
+								<button type="button" className="primary with-icon" disabled={busyCode === i.code} onClick={() => accept(i.code)}><img src="/icons/check.svg" alt="" width="18" height="18" /> Accept</button>
+								<button type="button" className="with-icon" disabled={busyCode === i.code} onClick={() => decline(i.code)}><img src="/icons/x.svg" alt="" width="18" height="18" /> Decline</button>
 							</span>
 						</div>
 					))}
 				</section>
 			)}
 
-			{!data && !error && <p>Loading...</p>}
+			{!data && !error && <Loading />}
 
 			{data && projects.length === 0 && (
 				<div className="empty-state">
+					<Trail tone="light" />
 					<h2>No projects yet</h2>
 					<p>Start a project and invite your team, or join one with an invite code.</p>
 				</div>

@@ -3,16 +3,19 @@ import { useState, useEffect } from 'react'
 import Dashboard from './Dashboard.jsx'
 import Home from './Home.jsx'
 import Requests from './Requests.jsx'
+import { Loading } from '../components/Contours.jsx'
 import TaskDetails from '../components/TaskDetails.jsx'
 import {
 getTasks, getUsers, getRequests, saveTasks, updateStatus,
-sendRequest, decideRequest, makeInvite, toRow, deleteTask, removeFromProject, onChange,
+sendRequest, decideRequest, makeInvite, toRow, deleteTask, removeFromProject, setMemberRole, transferOwnership, onChange,
 } from '../db.js'
+import { roleName, roleIcon } from '../labels.js'
 import { shiftTask, toDateStr, analyzeTasks } from '../engine/schedule.js'
 
 export default function Project({ project, userId, initialTaskId = null, onLeft }) {
 //this is for knowing if the user can edit the timeline
 const isAdmin = project.role === 'admin'
+const isOwner = !!project.isOwner
 
 const [tab, setTab] = useState('dashboard')
 const [tasks, setTasks] = useState([])
@@ -26,6 +29,7 @@ const [message, setMessage] = useState('')
 //this is for the invite tab (the made invite remembers which role it is for)
 const [inviteRole, setInviteRole] = useState('member')
 const [invite, setInvite] = useState(null)
+const [copied, setCopied] = useState(false)
 
 //this is for loading everything when the page opens, then again whenever anyone changes something (live updates)
 useEffect(() => {
@@ -167,18 +171,43 @@ async function removePerson(person) {
     }
 }
 
+//this is for making someone an admin or a member
+async function changeRole(person, role) {
+    setMessage('')
+    try {
+    await setMemberRole(project.id, person.id, role)
+    load()
+    } catch (e) {
+    setMessage(e.message)
+    }
+}
+
+//this is for the owner handing the project to another admin (the owner stays an admin)
+async function giveOwnership(person) {
+    if (!confirm('Make ' + person.name + ' the owner of ' + project.name + '? You will stay an admin.')) return
+    setMessage('')
+    try {
+    await transferOwnership(project.id, person.id)
+    await load()
+    onLeft()
+    } catch (e) {
+    setMessage(e.message)
+    }
+}
+
 //this is for making an invite link
 async function handleInvite() {
     setMessage('')
     try {
     const code = await makeInvite(project.id, inviteRole, userId)
+    setCopied(false)
     setInvite({ role: inviteRole, link: window.location.origin + window.location.pathname + '#join=' + code })
     } catch (e) {
     setMessage(e.message)
     }
 }
 
-if (loading) return <p>Loading...</p>
+if (loading) return <Loading />
 
 //this is for the open details panel and the waiting request on that task
 const selected = tasks.find(t => t.id === selectedId)
@@ -187,17 +216,21 @@ const pendingCount = requests.filter(r => r.status === 'pending').length
 
 return (
     <div>
+    <p className="eyebrow">Project · {roleName(project.role, project.isOwner)}</p>
     <h1>{project.name}</h1>
     {project.description && <p className="desc">{project.description}</p>}
-    <p>You are {isAdmin ? 'an admin' : 'a member'}. <button onClick={() => removePerson({ id: userId })}>Leave project</button></p>
+    {isOwner
+    ? <p className="who">You own this project. Make another admin the owner (Invite tab) before you can leave.</p>
+    : <p><button className="link small with-icon" onClick={() => removePerson({ id: userId })}><img src="/icons/leave.svg" alt="" width="16" height="16" /> Leave project</button></p>}
 
-    <nav>
-        <button onClick={() => setTab('dashboard')}>Tasks</button>
-        <button onClick={() => setTab('timeline')}>Timeline</button>
-        <button onClick={() => setTab('requests')}>
-        Requests{isAdmin && pendingCount > 0 ? ' (' + pendingCount + ')' : ''}
+    {/*this is for the tabs (the open one is underlined)*/}
+    <nav className="tabs" aria-label="Project sections">
+        <button onClick={() => setTab('dashboard')} aria-current={tab === 'dashboard' ? 'page' : undefined}><img src="/icons/tasks.svg" alt="" width="18" height="18" /> Tasks</button>
+        <button onClick={() => setTab('timeline')} aria-current={tab === 'timeline' ? 'page' : undefined}><img src="/icons/timeline.svg" alt="" width="18" height="18" /> Timeline</button>
+        <button onClick={() => setTab('requests')} aria-current={tab === 'requests' ? 'page' : undefined}>
+        <img src="/icons/inbox.svg" alt="" width="18" height="18" /> Requests{isAdmin && pendingCount > 0 ? ' (' + pendingCount + ')' : ''}
         </button>
-        {isAdmin && <button onClick={() => setTab('invite')}>Invite</button>}
+        {isAdmin && <button onClick={() => setTab('invite')} aria-current={tab === 'invite' ? 'page' : undefined}><img src="/icons/user-plus.svg" alt="" width="18" height="18" /> Invite</button>}
     </nav>
 
     {message && <div className="error-box" role="alert">{message}</div>}
@@ -233,28 +266,51 @@ return (
     {tab === 'invite' && isAdmin && (
         <div>
         <h2>Invite someone</h2>
-        <label htmlFor="invite-role">They will be a</label>
-        <select id="invite-role" value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
-            <option value="member">Member (can update their own tasks)</option>
-            <option value="admin">Admin (can edit everything)</option>
-        </select>
-        <button onClick={handleInvite}>Make invite link</button>
+        <div className="add-task">
+        <div className="field">
+            <label htmlFor="invite-role">They will be a</label>
+            <div className="invite-row">
+            <select id="invite-role" value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
+                <option value="member">Member (can update their own tasks)</option>
+                <option value="admin">Admin (can edit everything)</option>
+            </select>
+            <button className="primary" onClick={handleInvite}>Make invite link</button>
+            </div>
+        </div>
 
         {invite && (
-            <div>
+            <div className="field">
             <p>This link makes them {invite.role === 'admin' ? 'an admin' : 'a member'}. It works once and expires in 7 days.</p>
-            <input readOnly value={invite.link} aria-label="Invite link" />
-            <button onClick={() => navigator.clipboard.writeText(invite.link)}>Copy</button>
+            <div className="invite-row">
+                <input readOnly value={invite.link} aria-label="Invite link" onFocus={e => e.target.select()} />
+                <button onClick={() => { navigator.clipboard.writeText(invite.link); setCopied(true) }}>{copied ? 'Copied!' : 'Copy'}</button>
+            </div>
             </div>
         )}
+        </div>
 
         <h3>Team ({users.length})</h3>
+        <ul className="team">
         {users.map(u => (
-            <p key={u.id}>
-            {u.name} ({u.role})
-            {u.id !== userId && <button onClick={() => removePerson(u)}>Remove</button>}
-            </p>
+            <li key={u.id} className="person">
+            <span className={'avatar' + (u.isOwner || u.role === 'admin' ? ' admin' : '')}>{u.name.charAt(0)}</span>
+            <span>
+                <strong>{u.name}{u.id === userId ? ' (you)' : ''}</strong>
+                <span className={'role-tag ' + (u.isOwner ? 'owner' : u.role === 'admin' ? 'admin' : '')}>
+                <img src={roleIcon(u.role, u.isOwner)} alt="" width="16" height="16" /> {roleName(u.role, u.isOwner)}
+                </span>
+            </span>
+            {u.id !== userId && !u.isOwner && (
+                <span className="actions">
+                {u.role === 'member' && <button className="with-icon" onClick={() => changeRole(u, 'admin')}><img src="/icons/shield.svg" alt="" width="18" height="18" /> Make admin</button>}
+                {u.role === 'admin' && isOwner && <button className="with-icon" onClick={() => changeRole(u, 'member')}><img src="/icons/user.svg" alt="" width="18" height="18" /> Make member</button>}
+                {u.role === 'admin' && isOwner && <button className="with-icon" onClick={() => giveOwnership(u)}><img src="/icons/crown.svg" alt="" width="18" height="18" /> Make owner</button>}
+                <button className="with-icon" onClick={() => removePerson(u)}><img src="/icons/x.svg" alt="" width="18" height="18" /> Remove</button>
+                </span>
+            )}
+            </li>
         ))}
+        </ul>
         </div>
     )}
     </div>

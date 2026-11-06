@@ -49,7 +49,7 @@ function requestFromRow(r) {
 export async function getMyProjects(userId) {
   const { data, error } = await supabase
     .from("roles")
-    .select("role, projects(id, name, description)")
+    .select("role, is_owner, projects(id, name, description)")
     .eq("user_id", userId);
   if (error) throw error;
   return data
@@ -58,6 +58,7 @@ export async function getMyProjects(userId) {
       name: r.projects.name,
       description: r.projects.description || "",
       role: r.role,
+      isOwner: !!r.is_owner,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -109,7 +110,7 @@ export async function saveMyName(userId, name) {
 export async function getUsers(projectId) {
   const { data, error } = await supabase
     .from("roles")
-    .select("user_id, role, users(name)")
+    .select("user_id, role, is_owner, users(name)")
     .eq("project_id", projectId);
   if (error) throw error;
   return data
@@ -117,6 +118,7 @@ export async function getUsers(projectId) {
       id: r.user_id,
       name: r.users && r.users.name ? r.users.name : "Unnamed",
       role: r.role,
+      isOwner: !!r.is_owner,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -322,4 +324,46 @@ export async function markAllRead() {
     .update({ read: true })
     .eq("read", false);
   if (error) throw error;
+}
+
+//this is for making someone an admin or a member (admins can make members admins, only the owner can make an admin a member)
+export async function setMemberRole(projectId, userId, role) {
+  const { error } = await supabase.rpc("set_member_role", {
+    pid: projectId,
+    uid: userId,
+    new_role: role,
+  });
+  if (error) throw error;
+}
+
+//this is for the owner handing the project over to another admin (the old owner stays an admin)
+export async function transferOwnership(projectId, userId) {
+  const { error } = await supabase.rpc("transfer_ownership", {
+    pid: projectId,
+    uid: userId,
+  });
+  if (error) throw error;
+}
+
+//this is for deleting your own account and all your data (the database refuses if you are the only admin of a project that still has other people)
+export async function deleteMyAccount() {
+  const { error } = await supabase.rpc("delete_my_account");
+  if (error) throw error;
+}
+
+//this is for telling the person what deleting the account will do to each of their projects, before they press the button
+//kind is 'delete' (nobody else is in it, so it goes away), 'blocked' (you are the only admin), 'transfer' (you own it, it goes to another admin) or 'leave'
+export async function getDeletePlan(userId, projects) {
+  const plan = [];
+  for (const p of projects) {
+    const users = await getUsers(p.id);
+    const others = users.filter((u) => u.id !== userId);
+    const otherAdmins = others.filter((u) => u.role === "admin");
+    let kind = "leave";
+    if (others.length === 0) kind = "delete";
+    else if (p.role === "admin" && otherAdmins.length === 0) kind = "blocked";
+    else if (p.isOwner) kind = "transfer";
+    plan.push({ id: p.id, name: p.name, kind, people: others.length });
+  }
+  return plan;
 }

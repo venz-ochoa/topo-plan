@@ -73,7 +73,7 @@ return (
         return (
         <div key={d.getTime()} className="cell day">
             {/*this is for the thin line, only on days the task runs*/}
-            {inRange && <div className={info && info.critical ? 'bar crit' : 'bar'} />}
+            {inRange && <div className={(info && info.critical ? 'bar crit' : 'bar') + (str === task.startDate ? ' start' : '') + (str === task.endDate ? ' end' : '')} />}
         </div>
         )
     })}
@@ -122,7 +122,7 @@ return (
 
     {/*this is for the chart: it scrolls sideways, and the task column stays in view*/}
     <div className="gantt-wrap">
-        <div className="gantt" style={{ gridTemplateColumns: '220px repeat(' + days.length + ', 88px)' }}>
+        <div className="gantt" style={{ gridTemplateColumns: '240px repeat(' + days.length + ', 88px)' }}>
         <div className="cell head corner">Task</div>
         {days.map((d, i) => (
             <div key={d.getTime()} className={'cell head' + (toDateStr(d) === today ? ' today' : '')}>
@@ -141,5 +141,5 @@ return (
         <p className="empty">{isAdmin ? 'No tasks yet. Add your first one above.' : 'No tasks yet. An admin needs to add them.'}</p>
     )}
     </div>
-)
+    )
 }

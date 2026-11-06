@@ -36,13 +36,13 @@ export default function Login({ onSwitch }) {
 		<h2>Log in</h2>
 
 		<div className="field span-2">
-			<label htmlFor="login-email">Email</label>
+			<label htmlFor="login-email"><img src="/icons/mail.svg" alt="" width="18" height="18" /> Email</label>
 			<input id="login-email" type="email" autoComplete="email" required
 			value={email} onChange={e => setEmail(e.target.value)} />
 		</div>
 
 		<div className="field span-2">
-			<label htmlFor="login-password">Password</label>
+			<label htmlFor="login-password"><img src="/icons/lock.svg" alt="" width="18" height="18" /> Password</label>
 			<input id="login-password" type="password" autoComplete="current-password" required
 			value={password} onChange={e => setPassword(e.target.value)} />
 		</div>
@@ -51,10 +51,10 @@ export default function Login({ onSwitch }) {
 		{error && <div className="error-box" role="alert">{error}</div>}
 
 		<div className="form-footer">
-			<button type="submit" disabled={busy}>{busy ? 'Logging in...' : 'Log in'}</button>
+			<button type="submit" className="primary" disabled={busy}>{busy ? 'Logging in...' : 'Log in'}</button>
 		</div>
 
-		<p>No account yet? <button type="button" onClick={onSwitch}>Sign up</button></p>
+		<p className="switch-line">No account yet? <button type="button" onClick={onSwitch}>Sign up</button></p>
 		</form>
 	)
 }

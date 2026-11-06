@@ -62,25 +62,25 @@ return (
     <h2>Sign up</h2>
 
     <div className="field span-2">
-        <label htmlFor="signup-name">Your name (teammates will see this)</label>
+        <label htmlFor="signup-name"><img src="/icons/user.svg" alt="" width="18" height="18" /> Your name (teammates will see this)</label>
         <input id="signup-name" autoComplete="name" required maxLength={60}
         value={name} onChange={e => setName(e.target.value)} />
     </div>
 
     <div className="field span-2">
-        <label htmlFor="signup-email">Email</label>
+        <label htmlFor="signup-email"><img src="/icons/mail.svg" alt="" width="18" height="18" /> Email</label>
         <input id="signup-email" type="email" autoComplete="email" required
         value={email} onChange={e => setEmail(e.target.value)} />
     </div>
 
     <div className="field span-2">
-        <label htmlFor="signup-password">Password (8+ characters)</label>
+        <label htmlFor="signup-password"><img src="/icons/lock.svg" alt="" width="18" height="18" /> Password (8+ characters)</label>
         <input id="signup-password" type="password" autoComplete="new-password" required
         value={password} onChange={e => setPassword(e.target.value)} />
     </div>
 
     <div className="field span-2">
-        <label htmlFor="signup-again">Type the password again</label>
+        <label htmlFor="signup-again"><img src="/icons/lock.svg" alt="" width="18" height="18" /> Type the password again</label>
         <input id="signup-again" type="password" autoComplete="new-password" required
         value={again} onChange={e => setAgain(e.target.value)} />
     </div>
@@ -89,10 +89,10 @@ return (
     {error && <div className="error-box" role="alert">{error}</div>}
 
     <div className="form-footer">
-        <button type="submit" disabled={busy}>{busy ? 'Creating...' : 'Sign up'}</button>
+        <button type="submit" className="primary" disabled={busy}>{busy ? 'Creating...' : 'Sign up'}</button>
     </div>
 
-    <p>Already have an account? <button type="button" onClick={onSwitch}>Log in</button></p>
+    <p className="switch-line">Already have an account? <button type="button" onClick={onSwitch}>Log in</button></p>
     </form>
-)
+    )
 }

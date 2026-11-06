@@ -100,7 +100,7 @@ export default function CreateProject({ myEmail, onCreated, onDone, onCancel }) 
 							<strong>{i.email}</strong>
 							<span className="invite-row">
 								<input readOnly aria-label={'Invite link for ' + i.email} value={linkFor(i.code)} onFocus={e => e.target.select()} />
-								<button type="button" onClick={() => copy(i.code)}>{copied === i.code ? 'Copied' : 'Copy link'}</button>
+								<button type="button" className="with-icon" onClick={() => copy(i.code)}>{copied === i.code ? <><img src="/icons/check.svg" alt="" width="18" height="18" /> Copied</> : <><img src="/icons/copy.svg" alt="" width="18" height="18" /> Copy link</>}</button>
 							</span>
 						</div>
 					))}
@@ -113,7 +113,7 @@ export default function CreateProject({ myEmail, onCreated, onDone, onCancel }) 
 
 				<div className="form-footer">
 					<button type="button" className="primary" onClick={() => onDone(result.id)}>Open project</button>
-					<button type="button" onClick={onCancel}>Back to dashboard</button>
+					<button type="button" className="with-icon" onClick={onCancel}><img src="/icons/back.svg" alt="" width="18" height="18" /> Back to dashboard</button>
 				</div>
 			</div>
 		)
@@ -122,22 +122,24 @@ export default function CreateProject({ myEmail, onCreated, onDone, onCancel }) 
 	return (
 		<div>
 			<h2>New project</h2>
+			<p className="lead">Give it a name, then bring your team along. You can always invite more people later.</p>
+			<div className="split">
 			<form className="add-task" onSubmit={handleSubmit}>
 				<div className="field span-2">
-					<label htmlFor="new-title">Title</label>
+					<label htmlFor="new-title"><img src="/icons/pen.svg" alt="" width="18" height="18" /> Title</label>
 					<input id="new-title" required maxLength={80} autoFocus
 						value={title} onChange={e => setTitle(e.target.value)} />
 				</div>
 
 				<div className="field span-2">
-					<label htmlFor="new-description">Description (optional)</label>
+					<label htmlFor="new-description"><img src="/icons/text.svg" alt="" width="18" height="18" /> Description (optional)</label>
 					<textarea id="new-description" rows={3} maxLength={500}
 						value={description} onChange={e => setDescription(e.target.value)} />
-					<span className="tag">{description.length}/500</span>
+					<span className="counter">{description.length}/500</span>
 				</div>
 
 				<div className="field span-2">
-					<label htmlFor="new-emails">Invite members by email (optional)</label>
+					<label htmlFor="new-emails"><img src="/icons/mail.svg" alt="" width="18" height="18" /> Invite members by email (optional)</label>
 					<div className="invite-row">
 						<input id="new-emails" type="text" inputMode="email" autoComplete="off"
 							placeholder="name@example.com, other@example.com"
@@ -145,9 +147,9 @@ export default function CreateProject({ myEmail, onCreated, onDone, onCancel }) 
 							value={draft}
 							onChange={e => setDraft(e.target.value)}
 							onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addDraft() } }} />
-						<button type="button" onClick={addDraft} disabled={draft.trim() === ''}>Add</button>
+						<button type="button" className="with-icon" onClick={addDraft} disabled={draft.trim() === ''}><img src="/icons/plus.svg" alt="" width="18" height="18" /> Add</button>
 					</div>
-					<span id="new-emails-help" className="tag">
+					<span id="new-emails-help" className="hint">
 						Press Enter or Add. You can paste several addresses at once. Up to {MAX_INVITES} people.
 					</span>
 
@@ -162,7 +164,7 @@ export default function CreateProject({ myEmail, onCreated, onDone, onCancel }) 
 							{emails.map(em => (
 								<li key={em} className="chip">
 									{em}
-									<button type="button" aria-label={'Remove ' + em} onClick={() => removeEmail(em)}>x</button>
+									<button type="button" aria-label={'Remove ' + em} onClick={() => removeEmail(em)}><img src="/icons/x.svg" alt="" width="14" height="14" /></button>
 								</li>
 							))}
 						</ul>
@@ -175,9 +177,19 @@ export default function CreateProject({ myEmail, onCreated, onDone, onCancel }) 
 					<button type="submit" className="primary" disabled={busy}>
 						{busy ? 'Creating...' : emails.length > 0 || draft.trim() ? 'Create project and invite' : 'Create project'}
 					</button>
-					<button type="button" onClick={onCancel} disabled={busy}>Cancel</button>
+					<button type="button" className="with-icon" onClick={onCancel} disabled={busy}><img src="/icons/x.svg" alt="" width="18" height="18" /> Cancel</button>
 				</div>
 			</form>
+
+			<aside className="side-card" aria-label="What happens next">
+				<h3>What happens next</h3>
+				<ol className="steps">
+					<li><img src="/icons/crown.svg" alt="" width="22" height="22" /><div><strong>You become the admin</strong><span>You can add tasks, set dates and manage the team.</span></div></li>
+					<li><img src="/icons/send.svg" alt="" width="22" height="22" /><div><strong>Invites are links</strong><span>Copy each link and send it. A link works once, for that email, for 7 days.</span></div></li>
+					<li><img src="/icons/flag.svg" alt="" width="22" height="22" /><div><strong>Start planning</strong><span>Open the project and add your first task.</span></div></li>
+				</ol>
+			</aside>
+			</div>
 		</div>
 	)
 }

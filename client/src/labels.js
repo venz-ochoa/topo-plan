@@ -26,3 +26,16 @@ export function requestText(r) {
     return "change the status to " + status_names[r.newStatus];
   return "move it " + daysText(r.days);
 }
+
+//this is for the three kinds of people in a project: the owner (made the project, one per project), admins, and members
+//in the database the owner is an admin who also has is_owner turned on, so everything an admin can do the owner can do too
+export function roleName(role, isOwner) {
+  if (isOwner) return "Owner";
+  return role === "admin" ? "Admin" : "Member";
+}
+
+//this is for the small picture that goes with each kind of person
+export function roleIcon(role, isOwner) {
+  if (isOwner) return "/icons/crown.svg";
+  return role === "admin" ? "/icons/shield.svg" : "/icons/user.svg";
+}

@@ -1,5 +1,6 @@
 //this is for the popup window that opens when a task is clicked
 import { useEffect, useRef, useState } from 'react'
+import { Icon } from './Contours.jsx'
 import { status_names, status_list, nameOf, daysText, requestText } from '../labels.js'
 
 //this is for the words in the "I want to" box
@@ -65,29 +66,27 @@ return (
     }}
     >
     <div className="modal-body">
-        <div>
-        <button type="button" onClick={() => dialogRef.current.close()}>Close</button>
-        </div>
+        <button type="button" className="x" aria-label="Close" onClick={() => dialogRef.current.close()}><Icon name="x" /></button>
 
         <h2>{task.name}</h2>
 
         {message && <div className="error-box" role="alert">{message}</div>}
 
-        <p>Assigned to: <strong>{assigneeName}</strong></p>
-
-        {/*this is for how critical the task is*/}
-        <p>
-        Critical path:{' '}
-        {info
+        {/*this is for the facts of the task, label on the left and answer on the right*/}
+        <dl className="facts">
+        <dt>Assigned to</dt><dd><strong>{assigneeName}</strong></dd>
+        <dt>Critical path</dt>
+        <dd>
+            {info
             ? info.critical
-            ? 'Critical. No buffer, so a delay moves the project end date.'
-            : 'Not critical. ' + info.slack + '-day buffer.'
+                ? 'Critical. No buffer, so a delay moves the project end date.'
+                : 'Not critical. ' + info.slack + '-day buffer.'
             : 'Not calculated.'}
-        </p>
-
-        <p>Dates: {task.startDate} to {task.endDate}</p>
-        <p>Priority: {task.priority === 'high' ? 'High' : task.priority === 'low' ? 'Low' : 'Medium'}</p>
-        <p>Depends on: {dependsOn.length > 0 ? dependsOn.join(', ') : 'Nothing'}</p>
+        </dd>
+        <dt>Dates</dt><dd>{task.startDate} to {task.endDate}</dd>
+        <dt>Priority</dt><dd>{task.priority === 'high' ? 'High' : task.priority === 'low' ? 'Low' : 'Medium'}</dd>
+        <dt>Depends on</dt><dd>{dependsOn.length > 0 ? dependsOn.join(', ') : 'Nothing'}</dd>
+        </dl>
 
         {/*this is for admins to change who the task is assigned to*/}
         {isAdmin && (
@@ -127,7 +126,7 @@ return (
             {pending.map(r => (
             <div key={r.id}>
                 <p>{nameOf(users, r.requestedBy)} asked to {requestText(r)}.{r.reason ? ' Reason: ' + r.reason : ''}</p>
-                <button type="button" onClick={() => onDecide(r, true)}>Approve</button>{' '}
+                <button type="button" className="primary" onClick={() => onDecide(r, true)}>Approve</button>{' '}
                 <button type="button" onClick={() => onDecide(r, false)}>Deny</button>
             </div>
             ))}
