@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-label="TopoPlan"><rect width="64" height="64" rx="15" fill="#11291f"/><g transform="translate(8 8) scale(1.5)"><g fill="none" stroke="#8fb29a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="16" cy="18" rx="14" ry="10" transform="rotate(-18 16 18)"/><ellipse cx="16" cy="18" rx="8.5" ry="6" transform="rotate(-18 16 18)"/></g>
+<path d="M16 18V5" stroke="#fcfaf4" stroke-width="1.8" stroke-linecap="round"/>
+<path d="M16 5l8 3.2-8 3.2z" fill="#e0532b"/>
+<circle cx="16" cy="18" r="2.4" fill="#e0532b" stroke="#fcfaf4" stroke-width="1.2"/></g><text x="80" y="43" font-family="'Young Serif', Georgia, serif" font-size="33" fill="#11291f">TopoPlan</text></svg>

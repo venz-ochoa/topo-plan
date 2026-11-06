@@ -24,7 +24,7 @@ return (
                 </span>
             </div>
             </div>
-            <span className="who">{mine.length} {mine.length === 1 ? 'task' : 'tasks'}, {complete} complete</span>
+            <span className="who">{mine.length} {mine.length === 1 ? 'task' : 'tasks'}, {complete} done</span>
             {mine.length === 0 && <span className="who">No tasks assigned.</span>}
             <ul className="plain-list">
             {mine.map(t => (

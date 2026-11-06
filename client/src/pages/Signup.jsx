@@ -1,6 +1,7 @@
 //this is for the sign up screen
 import { useState } from 'react'
 import { supabase } from '../supabase.js'
+import { friendly } from '../engine/errors.js'
 
 export default function SignUp({ onSwitch }) {
 //this is for the values in the boxes
@@ -21,26 +22,28 @@ async function handleSubmit(e) {
 
     //this is for checking the password before asking supabase
     if (password.length < 8) {
-    setError('Password must be at least 8 characters.')
-    return
+        setError('Password must be at least 8 characters.')
+        return
     }
     if (password !== again) {
-    setError('The two passwords do not match.')
-    return
+        setError('The two passwords do not match.')
+        return
     }
 
     setBusy(true)
     //this is for sending the name along, so a profile can be made for it
     const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { name: name.trim() } },
+        email,
+        password,
+        options: { data: { name: name.trim() } },
     })
     setBusy(false)
 
-    if (error) {
-    setError(error.message)
-    return
+    //this is for an email that already has an account: show the same screen as a new sign up, so nobody can use this form to find out who has an account
+    const taken = error && (error.code === 'user_already_exists' || error.code === 'email_exists')
+    if (error && !taken) {
+        setError(friendly(error))
+        return
     }
     //this is for telling the user to confirm their email
     setSent(true)
@@ -51,7 +54,7 @@ if (sent) {
     return (
     <div className="add-task">
         <h2>Check your email</h2>
-        <p>We sent a link to {email}. Click it to confirm your account, then log in.</p>
+        <p>If this email can be used, we sent a link to {email}. Click it to confirm your account, then log in.</p>
         <button type="button" onClick={onSwitch}>Go to log in</button>
     </div>
     )

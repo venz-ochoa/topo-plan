@@ -20,9 +20,10 @@ function handleSubmit(e) {
     if (endDate < startDate) return
 
     //this is for making sure the assigned person is in the project
-    const person = users.find(u => u.name.toLowerCase() === who.trim().toLowerCase())
-    if (!person) {
-    setError('Pick a name from the list.')
+    //this is for the assignee being optional: empty is fine, a typed name must be someone in the project
+    const person = who.trim() ? users.find(u => u.name.toLowerCase() === who.trim().toLowerCase()) : null
+    if (who.trim() && !person) {
+    setError('Pick a name from the list, or leave it empty.')
     return
     }
     setError('')
@@ -31,7 +32,7 @@ function handleSubmit(e) {
     onAdd({
     id: crypto.randomUUID(),
     name: name,
-    assignedTo: person.id,
+    assignedTo: person ? person.id : null,
     startDate: startDate,
     endDate: endDate,
     priority: priority,
@@ -56,15 +57,16 @@ return (
 
     {/*this is for the user list, typing searches the names*/}
     <div className="field">
-        <label htmlFor="task-who">Assigned to</label>
-        <input id="task-who" list="user-names" autoComplete="off" required value={who}
-        onChange={e => setWho(e.target.value)} placeholder="Type to search" />
+        <label htmlFor="task-who">Assigned to (optional)</label>
+        <input id="task-who" list="user-names" autoComplete="off" value={who}
+        onChange={e => setWho(e.target.value)} placeholder="Leave empty for now" />
         <datalist id="user-names">
         {users.map(u => (
             <option key={u.id} value={u.name}>{u.role}</option>
         ))}
         </datalist>
         {error && <span className="who" role="alert">{error}</span>}
+        {!who.trim() && <span className="who">Nobody assigned: its dates and status stay locked until someone is.</span>}
     </div>
 
     <div className="field">

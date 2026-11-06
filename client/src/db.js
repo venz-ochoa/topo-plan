@@ -201,15 +201,14 @@ export async function decideRequest(requestId, approve) {
   if (error) throw error;
 }
 
-//this is for making an invite code (admins only)
-export async function makeInvite(projectId, role, userId) {
-  const { data, error } = await supabase
-    .from("invites")
-    .insert({ project_id: projectId, role: role, created_by: userId })
-    .select("code")
-    .single();
+//this is for making an invite code (admins only, the database function checks it and sets the expiry itself)
+export async function makeInvite(projectId, role) {
+  const { data, error } = await supabase.rpc("make_invite", {
+    pid: projectId,
+    invite_role: role,
+  });
   if (error) throw error;
-  return data.code;
+  return data;
 }
 
 //this is for the dashboard: the tasks, the number of people and the waiting requests of every project at once
@@ -366,4 +365,11 @@ export async function getDeletePlan(userId, projects) {
     plan.push({ id: p.id, name: p.name, kind, people: others.length });
   }
   return plan;
+}
+
+//this is for deleting some of the user's notifications (the database only lets people delete their own)
+export async function deleteNotifications(ids) {
+  if (!ids.length) return;
+  const { error } = await supabase.from("notifications").delete().in("id", ids);
+  if (error) throw error;
 }

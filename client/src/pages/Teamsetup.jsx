@@ -1,6 +1,7 @@
 //this is for the screen where someone joins a project with an invite code (starting a project has its own screen)
 import { useState } from 'react'
 import { joinProject } from '../db.js'
+import { friendly } from '../engine/errors.js'
 
 export default function TeamSetup({ inviteCode, onDone, onCancel, onCreate }) {
 //this is for the value in the box (the code is filled in if it came from a link)
@@ -19,7 +20,7 @@ async function handleJoin(e) {
     window.history.replaceState(null, '', window.location.pathname)
     onDone(id)
     } catch (err) {
-    setError(err.message)
+    setError(friendly(err))
     }
     setBusy(false)
 }

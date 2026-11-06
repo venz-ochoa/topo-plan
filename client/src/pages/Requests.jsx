@@ -1,5 +1,5 @@
 //this is for the requests tab: admins decide, members watch their own
-import { nameOf, requestText } from '../labels.js'
+import { nameOf, requestText } from '../engine/labels.js'
 
 const result_names = { pending: 'Waiting', approved: 'Approved', denied: 'Denied' }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase.js'
-import { getMyProjects, getNotifications, markAllRead, onChange } from './db.js'
+import { getMyProjects, getNotifications, markAllRead, deleteNotifications, onChange } from './db.js'
 import Login from './pages/Login.jsx'
 import SignUp from './pages/Signup.jsx'
 import TeamSetup from './pages/Teamsetup.jsx'
@@ -10,7 +10,8 @@ import Overview from './pages/Overview.jsx'
 import CreateProject from './pages/CreateProject.jsx'
 import Notifications from './pages/Notifications.jsx'
 import { Contours, Logo, Icon, Trail, Loading } from './components/Contours.jsx'
-import { roleName } from './labels.js'
+import { roleName } from './engine/labels.js'
+import { friendly } from './engine/errors.js'
 
 export default function App() {
 	//this is for the logged in user (null means nobody)
@@ -67,7 +68,7 @@ export default function App() {
 			setProjects(list)
 			setCurrentId(prev => (list.some(p => p.id === prev) ? prev : list.length > 0 ? list[0].id : null))
 		} catch (e) {
-			setError(e.message)
+			setError(friendly(e))
 		}
 	}
 
@@ -220,6 +221,7 @@ export default function App() {
 						notes={notes}
 						projects={projects || []}
 						onMarkRead={async () => { await markAllRead(); loadNotes() }}
+						onClear={async ids => { await deleteNotifications(ids); loadNotes() }}
 						onOpen={id => openProject(id)}
 					/>
 				)}

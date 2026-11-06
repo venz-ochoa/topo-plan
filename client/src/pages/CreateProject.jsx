@@ -1,7 +1,8 @@
 //this is for the screen where someone starts a new project: title, description and the people to invite by email
 import { useState } from 'react'
 import { createProject } from '../db.js'
-import { parseEmails, MAX_INVITES } from '../emails.js'
+import { friendly } from '../engine/errors.js'
+import { parseEmails, MAX_INVITES } from '../engine/emails.js'
 
 //this is for the invite link of one code (the same kind of link the Invite tab makes)
 function linkFor(code) {
@@ -58,7 +59,7 @@ export default function CreateProject({ myEmail, onCreated, onDone, onCancel }) 
 		try {
 			created = await createProject(title.trim(), description.trim(), list)
 		} catch (err) {
-			setError(err.message)
+			setError(friendly(err))
 			setBusy(false)
 			return
 		}

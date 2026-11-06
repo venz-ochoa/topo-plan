@@ -1,8 +1,9 @@
 //this is for the dashboard of ALL the user's projects: a summary and the tasks of each one, plus waiting invitations
-import { roleName } from '../labels.js'
+import { roleName } from '../engine/labels.js'
 import { useState, useEffect } from 'react'
 import { getOverview, getMyInvites, joinProject, declineInvite, onChange } from '../db.js'
-import { status_names } from '../labels.js'
+import { friendly } from '../engine/errors.js'
+import { status_names } from '../engine/labels.js'
 import { Trail, Loading, ProgressTrail } from '../components/Contours.jsx'
 import { groupTasks, summarizeProject, isOverdue } from '../engine/summary.js'
 
@@ -10,22 +11,31 @@ import { groupTasks, summarizeProject, isOverdue } from '../engine/summary.js'
 const CAP = 5
 
 //this is for one list of tasks inside a project card (it hides itself when empty)
-function TaskGroup({ title, tasks, userId, now, onOpen }) {
+//tone is the colour family of the group: underway, ready, later or complete
+function TaskGroup({ title, tone, tasks, userId, now, onOpen }) {
 	const [all, setAll] = useState(false)
 	if (tasks.length === 0) return null
 	const shown = all ? tasks : tasks.slice(0, CAP)
 
 	return (
-		<div className="group">
-			<h4>{title} ({tasks.length})</h4>
+		<section className={'tgroup tone-' + tone}>
+			<h4 className="tgroup-head">
+				<span>{title}</span>
+				<span className="count">{tasks.length}</span>
+			</h4>
 			{shown.map(t => (
-				<div key={t.id} className="task-row">
-					{/*this is for the task name, clicking it opens the task inside its project*/}
-					<button type="button" className="link" onClick={() => onOpen(t.id)}>{t.name}</button>
-					<span className="who">{t.startDate} to {t.endDate}</span>
-					<span className={'status status-' + t.status}>{status_names[t.status]}</span>
-					{isOverdue(t, now) && <span className="status status-denied">Overdue</span>}
-					{t.assignedTo === userId && <span className="who">Assigned to you</span>}
+				<div key={t.id} className={'trow' + (t.status === 'done' ? ' is-done' : '')}>
+					{/*this is for the top line: the task name and its status side by side*/}
+					<div className="trow-top">
+						<button type="button" className="link" onClick={() => onOpen(t.id)}>{t.name}</button>
+						<span className={'status status-' + t.status}>{status_names[t.status]}</span>
+					</div>
+					{/*this is for the facts under the name: dates, who, and a warning if late*/}
+					<div className="trow-meta">
+						<span>{t.startDate} to {t.endDate}</span>
+						<span>{t.assignedTo === userId ? 'You' : t.assignedTo ? 'Someone else' : 'Not assigned yet'}</span>
+						{isOverdue(t, now) && <span className="status status-denied">Overdue</span>}
+					</div>
 				</div>
 			))}
 			{tasks.length > CAP && (
@@ -33,7 +43,7 @@ function TaskGroup({ title, tasks, userId, now, onOpen }) {
 					{all ? 'Show fewer' : 'Show all ' + tasks.length}
 				</button>
 			)}
-		</div>
+		</section>
 	)
 }
 
@@ -63,11 +73,11 @@ function ProjectCard({ project, tasks, loading, members, pending, userId, onOpen
 			{/*this is for the summary: progress, then the small facts*/}
 			<div className="progress-line">
 				<ProgressTrail percent={s.percent} label={project.name + ' progress'} />
-				<span className="who">{s.done} of {s.total} {s.total === 1 ? 'task' : 'tasks'} complete ({s.percent}%)</span>
+				<span className="who">{s.done} of {s.total} {s.total === 1 ? 'task' : 'tasks'} done ({s.percent}%)</span>
 			</div>
 			<ul className="stats">
-				<li>{s.underway} underway</li>
-				<li>{s.waiting} waiting</li>
+				<li>{s.underway} in progress</li>
+				<li>{s.waiting} to do</li>
 				{s.overdue > 0 && <li className="warn">{s.overdue} overdue</li>}
 				{s.mine > 0 && <li>{s.mine} for you</li>}
 				<li>{members} {members === 1 ? 'person' : 'people'}</li>
@@ -82,10 +92,10 @@ function ProjectCard({ project, tasks, loading, members, pending, userId, onOpen
 			)}
 			{!loading && s.total > 0 && nothingActive && <p className="empty">Nothing active right now.</p>}
 			<div className="groups">
-				<TaskGroup title="Underway" tasks={[...g.underway].sort(byEnd)} userId={userId} now={now} onOpen={id => onOpenTask(project.id, id)} />
-				<TaskGroup title="Ready to start" tasks={[...g.ready].sort(byEnd)} userId={userId} now={now} onOpen={id => onOpenTask(project.id, id)} />
-				<TaskGroup title="Coming later" tasks={[...g.later].sort(byEnd)} userId={userId} now={now} onOpen={id => onOpenTask(project.id, id)} />
-				<TaskGroup title="Completed this week" tasks={g.complete} userId={userId} now={now} onOpen={id => onOpenTask(project.id, id)} />
+				<TaskGroup title="In progress" tone="underway" tasks={[...g.underway].sort(byEnd)} userId={userId} now={now} onOpen={id => onOpenTask(project.id, id)} />
+				<TaskGroup title="Up next" tone="ready" tasks={[...g.ready].sort(byEnd)} userId={userId} now={now} onOpen={id => onOpenTask(project.id, id)} />
+				<TaskGroup title="Later" tone="later" tasks={[...g.later].sort(byEnd)} userId={userId} now={now} onOpen={id => onOpenTask(project.id, id)} />
+				<TaskGroup title="Done this week" tone="complete" tasks={g.complete} userId={userId} now={now} onOpen={id => onOpenTask(project.id, id)} />
 			</div>
 		</section>
 	)
@@ -114,7 +124,7 @@ export default function Overview({ projects, userId, onOpenProject, onOpenTask, 
 				setInvites(inviteList)
 			})
 			.catch(e => {
-				if (!cancelled) setError(e.message)
+				if (!cancelled) setError(friendly(e))
 			})
 		return () => { cancelled = true }
 	}, [projectKey, tick])
@@ -131,7 +141,7 @@ export default function Overview({ projects, userId, onOpenProject, onOpenTask, 
 			setInvites(list => list.filter(i => i.code !== code))
 			await onProjectsChanged()
 		} catch (e) {
-			setInviteError(e.message)
+			setInviteError(friendly(e))
 			//this is for an invite that was used or removed in the meantime
 			setTick(t => t + 1)
 		}
@@ -145,7 +155,7 @@ export default function Overview({ projects, userId, onOpenProject, onOpenTask, 
 			await declineInvite(code)
 			setInvites(list => list.filter(i => i.code !== code))
 		} catch (e) {
-			setInviteError(e.message)
+			setInviteError(friendly(e))
 			setTick(t => t + 1)
 		}
 		setBusyCode('')

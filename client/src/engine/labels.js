@@ -1,8 +1,8 @@
 //this is for the words shown for each status (the database values stay the same)
 export const status_names = {
-  not_done: "Waiting",
-  progress: "Underway",
-  done: "Complete",
+  not_done: "To do",
+  progress: "In progress",
+  done: "Done",
 };
 
 //this is for the order of the status choices
@@ -20,7 +20,7 @@ export function daysText(days) {
   return n + (n === 1 ? " day" : " days") + (days > 0 ? " later" : " earlier");
 }
 
-//this is for describing a request like "change the status to Underway" or "move it 1 day later"
+//this is for describing a request like "change the status to In progress" or "move it 1 day later"
 export function requestText(r) {
   if (r.kind === "status")
     return "change the status to " + status_names[r.newStatus];

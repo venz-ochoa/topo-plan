@@ -2,7 +2,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase.js'
 import { getMyName, saveMyName, getDeletePlan, deleteMyAccount } from '../db.js'
-import { roleName, roleIcon } from '../labels.js'
+import { roleName, roleIcon } from '../engine/labels.js'
+import { friendly } from '../engine/errors.js'
+import Activity from '../components/Activity.jsx'
 
 export default function Profile({ projects, currentId, userId, email, onOpen, onCreate, onJoin, onDeleted }) {
 //this is for the values in the boxes
@@ -21,7 +23,7 @@ const [busy, setBusy] = useState(false)
 useEffect(() => {
     getMyName(userId)
     .then(setName)
-    .catch(e => setNameMsg({ text: e.message, bad: true }))
+    .catch(e => setNameMsg({ text: friendly(e), bad: true }))
 }, [userId])
 
 //this is for saving the new name
@@ -36,7 +38,7 @@ async function handleName(e) {
     await saveMyName(userId, name.trim())
     setNameMsg({ text: 'Name saved.', bad: false })
     } catch (err) {
-    setNameMsg({ text: err.message, bad: true })
+    setNameMsg({ text: friendly(err), bad: true })
     }
     setBusy(false)
 }
@@ -48,7 +50,7 @@ async function handleEmail(e) {
     const { error } = await supabase.auth.updateUser({ email: newEmail.trim().toLowerCase() })
     setBusy(false)
     if (error) {
-    setEmailMsg({ text: error.message, bad: true })
+    setEmailMsg({ text: friendly(error), bad: true })
     return
     }
     setNewEmail('')
@@ -70,7 +72,7 @@ async function handlePassword(e) {
     const { error } = await supabase.auth.updateUser({ password })
     setBusy(false)
     if (error) {
-    setPassMsg({ text: error.message, bad: true })
+    setPassMsg({ text: friendly(error), bad: true })
     return
     }
     setPassword('')
@@ -81,13 +83,14 @@ async function handlePassword(e) {
 //this is for the delete account box: what will happen to each project, the word to type, and the busy state
 const [plan, setPlan] = useState(null)
 const [confirmText, setConfirmText] = useState('')
+const [delPassword, setDelPassword] = useState('')
 const [delMsg, setDelMsg] = useState('')
 const [deleting, setDeleting] = useState(false)
 
 //this is for working out what deleting would do to each project (it updates when the projects change)
 useEffect(() => {
     let alive = true
-    getDeletePlan(userId, projects).then(r => { if (alive) setPlan(r) }).catch(e => { if (alive) setDelMsg(e.message) })
+    getDeletePlan(userId, projects).then(r => { if (alive) setPlan(r) }).catch(e => { if (alive) setDelMsg(friendly(e)) })
     return () => { alive = false }
 }, [userId, projects])
 const blocked = plan ? plan.filter(x => x.kind === 'blocked') : []
@@ -96,14 +99,22 @@ const blocked = plan ? plan.filter(x => x.kind === 'blocked') : []
 async function handleDelete(e) {
     e.preventDefault()
     setDelMsg('')
-    if (blocked.length > 0 || confirmText !== 'DELETE') return
+    if (blocked.length > 0 || confirmText !== 'DELETE' || !delPassword) return
     if (!confirm('This deletes your account and your data for good. Continue?')) return
     setDeleting(true)
     try {
+    //this is for asking for the password again: it proves the person at the screen knows it (the database checks that the login is fresh)
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password: delPassword })
+    if (authError) {
+        setDelMsg('That password is not right.')
+        setDeleting(false)
+        return
+    }
+    setDelPassword('')
     await deleteMyAccount()
     onDeleted()
     } catch (err) {
-    setDelMsg(err.message)
+    setDelMsg(friendly(err))
     setDeleting(false)
     }
 }
@@ -141,6 +152,9 @@ return (
         <button className="with-icon" onClick={onCreate}><img src="/icons/plus.svg" alt="" width="18" height="18" /> New project</button>
         <button className="with-icon" onClick={onJoin}><img src="/icons/key.svg" alt="" width="18" height="18" /> Join with a code</button>
     </div>
+
+    {/*this is for the activity tracker: it fills the left column under the projects*/}
+    <Activity projects={projects} userId={userId} />
     </section>
 
     <section className="profile-forms">
@@ -223,8 +237,12 @@ return (
             <label htmlFor="delete-confirm">Type DELETE to confirm</label>
             <input id="delete-confirm" autoComplete="off" value={confirmText} onChange={e => setConfirmText(e.target.value)} disabled={blocked.length > 0} />
         </div>
+        <div className="field span-2">
+            <label htmlFor="delete-password">Your password</label>
+            <input id="delete-password" type="password" autoComplete="current-password" value={delPassword} onChange={e => setDelPassword(e.target.value)} disabled={blocked.length > 0} />
+        </div>
         <div className="form-footer">
-            <button type="submit" className="danger with-icon" disabled={deleting || blocked.length > 0 || confirmText !== 'DELETE'}>
+            <button type="submit" className="danger with-icon" disabled={deleting || blocked.length > 0 || confirmText !== 'DELETE' || !delPassword}>
             <img src="/icons/trash-light.svg" alt="" width="18" height="18" /> {deleting ? 'Deleting...' : 'Delete my account'}
             </button>
         </div>

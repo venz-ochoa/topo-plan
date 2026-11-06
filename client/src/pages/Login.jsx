@@ -22,7 +22,7 @@ export default function Login({ onSwitch }) {
 	setBusy(false)
 	if (error) {
 		//this is for a short message that doesn't say which part was wrong
-		if (error.message.includes('not confirmed')) {
+		if (error.code === 'email_not_confirmed' || /not confirmed/i.test(error.message || '')) {
 			setError('Please confirm your email first. Check your inbox.')
 		} else {
 			setError('Wrong email or password.')

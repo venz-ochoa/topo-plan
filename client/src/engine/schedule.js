@@ -41,6 +41,11 @@ export function findChain(id, tasks) {
 export function reschedule(tasks) {
   const done = {};
   sortTasks(tasks).forEach((t) => {
+    //this is for a complete task: it is finished, so it never moves
+    if (t.status === "done") {
+      done[t.id] = t;
+      return;
+    }
     //this is for how many days the task lasts
     const length = Math.round(
       (toDate(t.endDate) - toDate(t.startDate)) / 86400000,
@@ -87,7 +92,8 @@ export function analyzeTasks(tasks) {
 export function shiftTask(tasks, id, days) {
   const chain = findChain(id, tasks);
   const moved = tasks.map((t) => {
-    if (!chain.includes(t.id)) return t;
+    //this is for leaving tasks outside the chain, and complete tasks, where they are
+    if (!chain.includes(t.id) || t.status === "done") return t;
     return {
       ...t,
       startDate: addDays(t.startDate, days),

@@ -1,5 +1,5 @@
 //this is for the project page: tabs, loading tasks and requests, and saving them
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Dashboard from './Dashboard.jsx'
 import Home from './Home.jsx'
 import Requests from './Requests.jsx'
@@ -9,8 +9,30 @@ import {
 getTasks, getUsers, getRequests, saveTasks, updateStatus,
 sendRequest, decideRequest, makeInvite, toRow, deleteTask, removeFromProject, setMemberRole, transferOwnership, onChange,
 } from '../db.js'
-import { roleName, roleIcon } from '../labels.js'
-import { shiftTask, toDateStr, analyzeTasks } from '../engine/schedule.js'
+import { roleName, roleIcon } from '../engine/labels.js'
+import { friendly } from '../engine/errors.js'
+import { shiftTask, reschedule, toDateStr, analyzeTasks } from '../engine/schedule.js'
+import { statusBlockReason, needsAssignee } from '../engine/rules.js'
+
+//this is for the row of buttons that picks whose tasks to show: everyone, you, nobody yet, or one person
+function WhoFilter({ users, tasks, userId, value, onChange }) {
+const count = f => tasks.filter(f).length
+const options = [
+    { id: 'all', label: 'Everyone', n: tasks.length },
+    { id: 'mine', label: 'Assigned to you', n: count(t => t.assignedTo === userId) },
+    { id: 'none', label: 'Not assigned yet', n: count(t => !t.assignedTo) },
+]
+return (
+    <div className="filter-bar" role="group" aria-label="Show tasks of">
+    <span className="who">Show</span>
+    {options.map(o => (
+        <button key={o.id} type="button" className={'pill' + (value === o.id ? ' on' : '')} aria-pressed={value === o.id} onClick={() => onChange(o.id)}>
+        {o.label} <span className="count">{o.n}</span>
+        </button>
+    ))}
+    </div>
+)
+}
 
 export default function Project({ project, userId, initialTaskId = null, onLeft }) {
 //this is for knowing if the user can edit the timeline
@@ -25,6 +47,17 @@ const [requests, setRequests] = useState([])
 const [selectedId, setSelectedId] = useState(initialTaskId)
 const [loading, setLoading] = useState(true)
 const [message, setMessage] = useState('')
+//this is for the box that confirms something worked (a request sent, a decision saved)
+const [notice, setNotice] = useState('')
+//this is for showing only one person's tasks: 'all', 'mine', 'none' (nobody yet) or a person's id
+const [who, setWho] = useState('all')
+
+//this is for always knowing the newest tasks, even inside a click that happened before the screen redrew
+const tasksRef = useRef([])
+//this is for saving one change at a time, in order, so fast clicks cannot overwrite each other
+const saveQueue = useRef(Promise.resolve())
+const pendingSaves = useRef(0)
+const reloadLater = useRef(false)
 
 //this is for the invite tab (the made invite remembers which role it is for)
 const [inviteRole, setInviteRole] = useState('member')
@@ -38,17 +71,23 @@ useEffect(() => {
 }, [])
 
 async function load() {
+    //this is for waiting: loading now would bring back old dates over the change that is still being saved
+    if (pendingSaves.current > 0) {
+    reloadLater.current = true
+    return
+    }
     try {
     const [taskList, userList, requestList] = await Promise.all([
         getTasks(project.id),
         getUsers(project.id),
         getRequests(project.id),
     ])
+    tasksRef.current = taskList
     setTasks(taskList)
     setUsers(userList)
     setRequests(requestList)
     } catch (e) {
-    setMessage(e.message)
+    setMessage(friendly(e))
     }
     setLoading(false)
 }
@@ -63,37 +102,92 @@ async function loadRequests() {
 }
 
 //this is for saving a new list of tasks (only the changed ones go to the database)
-async function changeTasks(newTasks) {
+//the screen changes at once, the saves wait in line so fast clicks never undo each other
+function changeTasks(newTasks) {
     setMessage('')
+    const before = tasksRef.current
     const full = newTasks.map(t => ({ status: 'not_done', finishedAt: null, ...t }))
     const changed = full.filter(t => {
-    const old = tasks.find(o => o.id === t.id)
+    const old = before.find(o => o.id === t.id)
     return !old || JSON.stringify(toRow(old, project.id)) !== JSON.stringify(toRow(t, project.id))
     })
+    tasksRef.current = full
     setTasks(full)
+    if (changed.length === 0) return Promise.resolve()
+
+    pendingSaves.current += 1
+    saveQueue.current = saveQueue.current.then(async () => {
     try {
-    await saveTasks(project.id, changed)
+        await saveTasks(project.id, changed)
     } catch (e) {
-    setMessage('Could not save: ' + e.message)
-    load()
+        setMessage('Could not save: ' + friendly(e))
+        reloadLater.current = true
     }
+    pendingSaves.current -= 1
+    //this is for loading once, after the last save is done
+    if (pendingSaves.current === 0 && reloadLater.current) {
+        reloadLater.current = false
+        load()
+    }
+    })
+    return saveQueue.current
+}
+
+//this is for moving a task and the tasks that wait for it, always from the newest tasks
+function slip(id, move) {
+    const current = tasksRef.current
+    const task = current.find(t => t.id === id)
+    if (!task || task.status === 'done') return
+    if (needsAssignee(task)) {
+    setMessage('Assign this task to someone first. An admin can assign it to themselves.')
+    return
+    }
+    if (move < 0 && task.startDate <= toDateStr(new Date())) return
+    changeTasks(shiftTask(current, id, move))
+}
+
+//this is for adding a task
+function addTask(task) {
+    changeTasks(reschedule([...tasksRef.current, task]))
+}
+
+//this is for an admin changing the priority or the task it waits for (a complete task is locked)
+function editTask(id, patch) {
+    const current = tasksRef.current
+    const task = current.find(t => t.id === id)
+    if (!task || task.status === 'done') return
+    if (needsAssignee(task)) {
+    setMessage('Assign this task to someone first. An admin can assign it to themselves.')
+    return
+    }
+    changeTasks(reschedule(current.map(t => (t.id === id ? { ...t, ...patch } : t))))
 }
 
 //this is for changing the status of one task
 async function changeStatus(id, status) {
     setMessage('')
-    setTasks(prev => prev.map(t => (t.id === id ? { ...t, status: status, finishedAt: status === 'done' ? new Date().toISOString() : null } : t)))
+    const task = tasksRef.current.find(t => t.id === id)
+    const blocked = task && needsAssignee(task) ? 'Assign this task to someone first.' : task ? statusBlockReason(task, status, tasksRef.current) : ''
+    if (blocked) {
+    setMessage(blocked)
+    return
+    }
+    const next = tasksRef.current.map(t => (t.id === id ? { ...t, status: status, finishedAt: status === 'done' ? new Date().toISOString() : null } : t))
+    tasksRef.current = next
+    setTasks(next)
     try {
     await updateStatus(id, status)
     } catch (e) {
-    setMessage('Could not change status: ' + e.message)
+    setMessage('Could not change status: ' + friendly(e))
     load()
     }
 }
 
 //this is for an admin changing who a task is assigned to
 function assign(taskId, personId) {
-    changeTasks(tasks.map(t => (t.id === taskId ? { ...t, assignedTo: personId || null } : t)))
+    const task = tasksRef.current.find(t => t.id === taskId)
+    if (task && task.status === 'done') return
+    changeTasks(tasksRef.current.map(t => (t.id === taskId ? { ...t, assignedTo: personId || null } : t)))
 }
 
 //this is for sending a request to the admins
@@ -111,15 +205,33 @@ async function ask(taskId, kind, value, reason) {
         reason,
     })
     await loadRequests()
+    setNotice('Request sent. An admin will see it and decide.')
+    return true
     } catch (e) {
-    setMessage(e.message)
+    setMessage(friendly(e))
+    return false
     }
 }
 
 //this is for approving or denying a request (approving moves the task and the tasks that wait for it)
 async function decide(req, approve) {
     setMessage('')
-    const task = tasks.find(t => t.id === req.taskId)
+    const task = tasksRef.current.find(t => t.id === req.taskId)
+
+    //this is for a complete task: it is locked, so nothing about it can change
+    if (approve && task && task.status === 'done') {
+    setMessage('This task is done, so it is locked. Deny the request instead.')
+    return
+    }
+
+    //this is for a status request that would break the order (it cannot start or finish before the tasks it waits for)
+    if (approve && task && req.kind === 'status') {
+    const blocked = statusBlockReason(task, req.newStatus, tasksRef.current)
+    if (blocked) {
+        setMessage('Cannot approve yet. ' + blocked + ' Deny the request, or approve it after that.')
+        return
+    }
+    }
 
     //this is for stopping an approval that would move a task before today (date requests only)
     const isExtension = req.kind === 'extension'
@@ -132,16 +244,17 @@ async function decide(req, approve) {
     try {
     await decideRequest(req.id, approve)
     } catch (e) {
-    setMessage(e.message)
+    setMessage(friendly(e))
     loadRequests()
     return
     }
 
     //this is for moving the task after the approval is saved (date requests)
-    if (approve && task && isExtension) await changeTasks(shiftTask(tasks, task.id, req.days))
+    if (approve && task && isExtension) await changeTasks(shiftTask(tasksRef.current, task.id, req.days))
     //this is for a status request: the database already changed the status, so load the tasks again
     if (approve && req.kind === 'status') await load()
     loadRequests()
+    setNotice(approve ? 'Request approved.' : 'Request denied.')
 }
 
 //this is for deleting a task (the tasks that waited for it stop waiting)
@@ -151,9 +264,9 @@ async function removeTask(id) {
     try {
     await deleteTask(id)
     setSelectedId(null)
-    await changeTasks(tasks.filter(t => t.id !== id).map(t => ({ ...t, dependsOn: t.dependsOn.filter(d => d !== id) })))
+    await changeTasks(tasksRef.current.filter(t => t.id !== id).map(t => ({ ...t, dependsOn: t.dependsOn.filter(d => d !== id) })))
     } catch (e) {
-    setMessage(e.message)
+    setMessage(friendly(e))
     }
 }
 
@@ -167,7 +280,7 @@ async function removePerson(person) {
     if (self) onLeft()
     else load()
     } catch (e) {
-    setMessage(e.message)
+    setMessage(friendly(e))
     }
 }
 
@@ -178,7 +291,7 @@ async function changeRole(person, role) {
     await setMemberRole(project.id, person.id, role)
     load()
     } catch (e) {
-    setMessage(e.message)
+    setMessage(friendly(e))
     }
 }
 
@@ -191,7 +304,7 @@ async function giveOwnership(person) {
     await load()
     onLeft()
     } catch (e) {
-    setMessage(e.message)
+    setMessage(friendly(e))
     }
 }
 
@@ -199,19 +312,27 @@ async function giveOwnership(person) {
 async function handleInvite() {
     setMessage('')
     try {
-    const code = await makeInvite(project.id, inviteRole, userId)
+    const code = await makeInvite(project.id, inviteRole)
     setCopied(false)
     setInvite({ role: inviteRole, link: window.location.origin + window.location.pathname + '#join=' + code })
     } catch (e) {
-    setMessage(e.message)
+    setMessage(friendly(e))
     }
 }
+
+//this is for hiding the confirmation after a few seconds
+useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(''), 5000)
+    return () => clearTimeout(timer)
+}, [notice])
 
 if (loading) return <Loading />
 
 //this is for the open details panel and the waiting request on that task
 const selected = tasks.find(t => t.id === selectedId)
 const { analysis, error: analysisError } = analyzeTasks(tasks)
+const shownTasks = tasks.filter(t => who === 'all' ? true : who === 'mine' ? t.assignedTo === userId : who === 'none' ? !t.assignedTo : t.assignedTo === who)
 const pendingCount = requests.filter(r => r.status === 'pending').length
 
 return (
@@ -233,7 +354,16 @@ return (
         {isAdmin && <button onClick={() => setTab('invite')} aria-current={tab === 'invite' ? 'page' : undefined}><img src="/icons/user-plus.svg" alt="" width="18" height="18" /> Invite</button>}
     </nav>
 
-    {message && <div className="error-box" role="alert">{message}</div>}
+    {message && !selected && <div className="error-box" role="alert">{message}</div>}
+
+    {/*this is for the box that confirms something worked (it stays on screen for a few seconds)*/}
+    {notice && (
+        <div className="toast" role="status">
+        <img src="/icons/circle-check.svg" alt="" width="22" height="22" />
+        <span>{notice}</span>
+        <button type="button" className="link small" onClick={() => setNotice('')}>Dismiss</button>
+        </div>
+    )}
 
     {/*this is for the details panel that opens when a task is clicked*/}
     {selected && (
@@ -247,6 +377,7 @@ return (
         info={analysis ? analysis[selected.id] : null}
         requests={requests}
         message={message}
+        onEdit={editTask}
         onClose={() => setSelectedId(null)}
         onStatus={changeStatus}
         onAssign={assign}
@@ -256,9 +387,14 @@ return (
         />
     )}
 
-    {tab === 'dashboard' && <Dashboard tasks={tasks} userId={userId} onStatus={changeStatus} onOpen={setSelectedId} />}
+    {/*this is for choosing whose tasks the Tasks and Timeline tabs show*/}
+    {(tab === 'dashboard' || tab === 'timeline') && (
+        <WhoFilter users={users} tasks={tasks} userId={userId} value={who} onChange={setWho} />
+    )}
 
-    {tab === 'timeline' && <Home tasks={tasks} users={users} analysis={analysis} error={analysisError} isAdmin={isAdmin} onChange={changeTasks} onOpen={setSelectedId} />}
+    {tab === 'dashboard' && <Dashboard tasks={shownTasks} allTasks={tasks} userId={userId} users={users} onOpen={setSelectedId} />}
+
+    {tab === 'timeline' && <Home tasks={tasks} shown={shownTasks} users={users} analysis={analysis} error={analysisError} isAdmin={isAdmin} onAdd={addTask} onSlip={slip} onOpen={setSelectedId} />}
 
     {tab === 'requests' && <Requests requests={requests} tasks={tasks} users={users} isAdmin={isAdmin} onDecide={decide} />}
 
@@ -300,7 +436,7 @@ return (
                 <img src={roleIcon(u.role, u.isOwner)} alt="" width="16" height="16" /> {roleName(u.role, u.isOwner)}
                 </span>
             </span>
-            {u.id !== userId && !u.isOwner && (
+            {u.id !== userId && !u.isOwner && (u.role === 'member' || isOwner) && (
                 <span className="actions">
                 {u.role === 'member' && <button className="with-icon" onClick={() => changeRole(u, 'admin')}><img src="/icons/shield.svg" alt="" width="18" height="18" /> Make admin</button>}
                 {u.role === 'admin' && isOwner && <button className="with-icon" onClick={() => changeRole(u, 'member')}><img src="/icons/user.svg" alt="" width="18" height="18" /> Make member</button>}
