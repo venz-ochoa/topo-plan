@@ -7,7 +7,7 @@ import { Loading } from '../components/Contours.jsx'
 import TaskDetails from '../components/TaskDetails.jsx'
 import {
 getTasks, getUsers, getRequests, saveTasks, updateStatus,
-sendRequest, decideRequest, makeInvite, toRow, deleteTask, removeFromProject, setMemberRole, transferOwnership, onChange,
+sendRequest, decideRequest, makeInvite, makeEmailInvite, deleteProject, toRow, deleteTask, removeFromProject, setMemberRole, transferOwnership, onChange,
 } from '../db.js'
 import { roleName, roleIcon } from '../engine/labels.js'
 import { friendly } from '../engine/errors.js'
@@ -63,6 +63,7 @@ const reloadLater = useRef(false)
 const [inviteRole, setInviteRole] = useState('member')
 const [invite, setInvite] = useState(null)
 const [copied, setCopied] = useState(false)
+const [inviteEmail, setInviteEmail] = useState('')
 
 //this is for loading everything when the page opens, then again whenever anyone changes something (live updates)
 useEffect(() => {
@@ -284,6 +285,33 @@ async function removePerson(person) {
     }
 }
 
+//this is for inviting one email address: they see the invite on their Dashboard (and in Notifications) when they log in with that email
+async function handleEmailInvite() {
+    setMessage('')
+    const email = inviteEmail.trim().toLowerCase()
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setMessage('That is not a valid email address.'); return }
+    try {
+    await makeEmailInvite(project.id, inviteRole, email)
+    setInviteEmail('')
+    setNotice('Invite made for ' + email + '. They will see it on their Dashboard when they log in with that email.')
+    } catch (e) {
+    setMessage(friendly(e))
+    }
+}
+
+//this is for the owner deleting the whole project
+async function removeProject() {
+    if (!confirm('Delete ' + project.name + ' for everyone? All its tasks and requests are lost. This cannot be undone.')) return
+    if (prompt('Type the project name to confirm:') !== project.name) { setMessage('The name did not match, so nothing was deleted.'); return }
+    setMessage('')
+    try {
+    await deleteProject(project.id)
+    onLeft()
+    } catch (e) {
+    setMessage(friendly(e))
+    }
+}
+
 //this is for making someone an admin or a member
 async function changeRole(person, role) {
     setMessage('')
@@ -341,7 +369,7 @@ return (
     <h1>{project.name}</h1>
     {project.description && <p className="desc">{project.description}</p>}
     {isOwner
-    ? <p className="who">You own this project. Make another admin the owner (Invite tab) before you can leave.</p>
+    ? <p className="who">You own this project. To leave, make another admin the owner first (Invite tab), or <button className="link small" onClick={removeProject}>delete the project</button>.</p>
     : <p><button className="link small with-icon" onClick={() => removePerson({ id: userId })}><img src="/icons/leave.svg" alt="" width="16" height="16" /> Leave project</button></p>}
 
     {/*this is for the tabs (the open one is underlined)*/}
@@ -412,6 +440,15 @@ return (
             </select>
             <button className="primary" onClick={handleInvite}>Make invite link</button>
             </div>
+        </div>
+
+        <div className="field">
+            <label htmlFor="invite-email">Or invite by email</label>
+            <div className="invite-row">
+            <input id="invite-email" type="email" placeholder="name@example.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
+            <button className="primary" onClick={handleEmailInvite}>Invite by email</button>
+            </div>
+            <p className="who">They get the role chosen above. The invite shows on their Dashboard once they log in with that email.</p>
         </div>
 
         {invite && (

@@ -211,6 +211,23 @@ export async function makeInvite(projectId, role) {
   return data;
 }
 
+//this is for inviting one email address (admins only), gives back the invite code
+export async function makeEmailInvite(projectId, role, email) {
+  const { data, error } = await supabase.rpc("make_email_invite", {
+    pid: projectId,
+    invite_role: role,
+    invite_email: email,
+  });
+  if (error) throw error;
+  return data;
+}
+
+//this is for deleting a whole project (owner only, the database checks it)
+export async function deleteProject(projectId) {
+  const { error } = await supabase.rpc("delete_project", { pid: projectId });
+  if (error) throw error;
+}
+
 //this is for the dashboard: the tasks, the number of people and the waiting requests of every project at once
 //(one question per table instead of one per project)
 export async function getOverview(projectIds) {
