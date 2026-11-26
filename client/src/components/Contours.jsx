@@ -99,8 +99,10 @@ return (
     <div className="trail" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
     <svg viewBox="0 0 200 24" preserveAspectRatio="none">
         <path className="ahead" d={wave} />
-        <path className="walked" d={wave} pathLength="100" style={{ strokeDasharray: percent + ' 100', opacity: percent ? 1 : 0 }} />
     </svg>
+    <div className="walked-clip" style={{ clipPath: 'inset(-4px ' + (100 - percent) + '% -4px ' + (percent ? '-4px' : '0') + ')' }}>
+        <svg viewBox="0 0 200 24" preserveAspectRatio="none"><path className="walked" d={wave} /></svg>
+    </div>
     </div>
     )
 }

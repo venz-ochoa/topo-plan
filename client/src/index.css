@@ -3,9 +3,9 @@
 
 /* this is for the design values: change one here and the whole app follows (Tailwind makes classes like bg-pine and text-ink from them) */
 @theme {
-  --font-display: "Young Serif", Georgia, serif;
-  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "DM Mono", ui-monospace, Menlo, monospace;
+  --font-display: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Barlow", ui-sans-serif, system-ui, sans-serif;
 
   /* paper tones: the page, the cards on it, and a darker paper for hover and tracks */
   --color-paper: #f4efe2;
@@ -38,8 +38,6 @@
 @keyframes fade { from { opacity: 0; } }
 @keyframes drift { from { transform: rotate(0) scale(1.5); } to { transform: rotate(360deg) scale(1.5); } }
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse { 50% { opacity: 0.3; } }
-@keyframes bounce { 50% { transform: translateY(-3px); } }
 @keyframes grow { from { transform: scaleY(0); } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -52,19 +50,20 @@
   body {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: 17px;
+    line-height: 1.55;
+    font-variant-numeric: tabular-nums;
     color: var(--color-ink);
-    background: radial-gradient(circle, rgb(20 33 29 / 0.1) 1px, transparent 1.5px) 0 0 / 24px 24px, var(--color-paper);
+    background: radial-gradient(circle, rgb(20 33 29 / 0.07) 1px, transparent 1.5px) 0 0 / 24px 24px, var(--color-paper);
   }
   ::selection { background: var(--color-sun); }
 
   /* this is for titles: a warm serif for the big ones, small caps-style mono for group labels */
-  h1, h2 { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; line-height: 1.15; margin: 0.5rem 0; }
+  h1, h2 { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.015em; line-height: 1.15; margin: 0.5rem 0; }
   h1 { font-size: clamp(2.2rem, 5vw, 3.2rem); }
   h2 { font-size: 1.7rem; }
   h3 { font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 0.6rem; }
-  h4 { display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-soft); margin: 1rem 0 0.5rem; }
+  h4 { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 700; color: var(--color-ink-soft); margin: 1rem 0 0.5rem; }
   h4::before { content: ""; width: 0.5rem; height: 0.5rem; background: var(--color-ember); transform: rotate(45deg); }
   p { margin: 0.5rem 0; }
   ul { padding-left: 1.1rem; list-style: disc; }
@@ -82,8 +81,6 @@
   button:disabled { opacity: 0.45; cursor: not-allowed; }
   button.primary { color: var(--color-paper); background: var(--color-pine); border-color: var(--color-pine-deep); box-shadow: 0 2px 0 var(--color-pine-deep); }
   button.primary:hover:not(:disabled) { background: #28705b; box-shadow: 0 3px 0 var(--color-pine-deep); }
-  button.primary::after { content: "→"; display: inline-block; margin-left: 0.5rem; transition: transform 0.2s; }
-  button.primary:hover:not(:disabled)::after { transform: translateX(4px); }
 
   /* 16px text in the boxes stops phones from zooming in when you tap one */
   input, select, textarea {
@@ -111,7 +108,7 @@
   /* this is for small texts: soft sentences, and tiny mono labels */
   .who, .ends, .empty { color: var(--color-ink-soft); }
   .who { font-size: 0.9rem; }
-  .tag, .eyebrow { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .tag, .eyebrow { font-size: 0.9rem; font-weight: 600; color: var(--color-ink-soft); }
   .desc { color: var(--color-ink-soft); white-space: pre-wrap; max-width: 60ch; }
 
   .error-box { margin: 0.6rem 0; padding: 0.7rem 1rem; color: #7a2412; background: #fbe4dc; border: 1px solid #efb7a5; border-left: 4px solid var(--color-ember); border-radius: var(--radius-ctl); animation: pop 0.3s; }
@@ -139,9 +136,9 @@
   .rail button:hover:not(:disabled) { color: #fff; background: rgb(255 255 255 / 0.08); padding-left: 1.2rem; box-shadow: none; transform: none; }
   .rail button[aria-current="page"] { color: #fff; background: rgb(255 255 255 / 0.13); border-left-color: var(--color-ember); }
   .rail .eyebrow { margin: 1.5rem 0 0.35rem 0.9rem; color: var(--color-moss); }
-  .badge { min-width: 1.35rem; margin-left: auto; padding: 0 0.4rem; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.35rem; text-align: center; color: #fff; background: var(--color-ember); border-radius: 999px; animation: bounce 1.6s ease-in-out infinite; }
+  .badge { min-width: 1.35rem; margin-left: auto; padding: 0 0.4rem; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.35rem; text-align: center; color: #fff; background: var(--color-ember); border-radius: 999px; }
   .rail .project-link { display: block; }
-  .project-link small { display: block; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-moss); }
+  .project-link small { display: block; font-size: 0.82rem; font-weight: 500; color: var(--color-moss); }
 
   /* this is for the project tabs: an ember underline grows under the open tab */
   .tabs { gap: 0; margin: 1.5rem 0; border-bottom: 1.5px solid var(--color-line-strong); overflow-x: auto; flex-wrap: nowrap; }
@@ -166,7 +163,7 @@
   .gantt { width: max-content; min-width: 100%; }
   .cell { padding: 0.8rem 0.9rem; background: var(--color-sheet); border-bottom: 1px solid var(--color-line); border-right: 1px dotted var(--color-line-strong); }
   .cell.head { display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 500; background: var(--color-paper); }
-  .cell.head small { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .cell.head small { font-size: 0.62rem; color: var(--color-ink-soft); }
   .cell.head.today { color: #fff; background: var(--color-ember); }
   .cell.head.today small { color: #fff; }
   .cell.name, .cell.corner { position: sticky; left: 0; z-index: 2; box-shadow: 8px 0 12px -10px rgb(20 33 29 / 0.4); }
@@ -189,7 +186,6 @@
   /* this is for the colored status labels: a dot, a color and the words (never color alone), the dot of work in progress blinks softly */
   .status { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.15rem 0.7rem; font-size: 0.8rem; font-weight: 700; border-radius: 999px; }
   .status::before { content: ""; width: 0.5rem; height: 0.5rem; background: currentColor; border-radius: 50%; }
-  .status-progress::before { animation: pulse 1.4s ease-in-out infinite; }
   .status-not_done { color: #5d5a4f; background: #e6e1d3; }
   .status-progress, .status-pending { color: #7a5712; background: #f6e7c1; }
   .status-done, .status-approved { color: var(--color-pine); background: #d9e8de; }
@@ -205,7 +201,7 @@
   .modal-body h3 { margin: 0.9rem 0 0; }
   .modal-body .x { position: absolute; top: 1rem; right: 1rem; padding: 0.4rem; line-height: 0; }
   .facts { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1.25rem; margin: 0.5rem 0; padding: 1rem 0; border-block: 1px dashed var(--color-line-strong); }
-  .facts dt { padding-top: 0.2rem; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-soft); }
+  .facts dt { font-size: 0.95rem; color: var(--color-ink-soft); }
   .facts dd { margin: 0; }
 
   /* this is for the dashboard of all projects: one sheet per project, with a stamp for your role */
@@ -216,11 +212,12 @@
   .card-head .tag { padding: 0.1rem 0.55rem; color: var(--color-ember); border: 1.5px solid var(--color-ember); border-radius: 0.3rem; transform: rotate(-3deg); }
   .progress-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin-top: 1rem; }
   /* the progress is a wavy trail: a dotted one for the road ahead and a solid one for the way you walked */
-  .trail { flex: 1 1 12rem; max-width: 22rem; height: 1.4rem; }
+  .trail { position: relative; flex: 1 1 12rem; max-width: 22rem; height: 1.4rem; }
   .trail svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .trail path { fill: none; stroke-linecap: round; stroke-width: 3; vector-effect: non-scaling-stroke; }
   .trail .ahead { stroke: var(--color-line-strong); stroke-dasharray: 1 7; }
-  .trail .walked { stroke: var(--color-pine); transition: stroke-dasharray 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .trail .walked { stroke: var(--color-pine); }
+  .trail .walked-clip { position: absolute; inset: 0; transition: clip-path 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
   .stats { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.5rem; padding: 0; list-style: none; }
   .stats li { padding: 0.25rem 0.8rem; font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-ink-soft); background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 999px; }
   .stats .warn { color: #a63415; font-weight: 500; background: #fbe4dc; border-color: #efb7a5; }
@@ -343,7 +340,6 @@
   .row-card > img { flex: none; }
   .row-card .grow { flex: 1 1 16rem; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; overflow-wrap: anywhere; }
   .row-card .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-  button.primary.no-arrow::after { display: none; }
 
   .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1rem; align-items: start; margin-top: 1rem; }
   .team-grid .dash-task { margin-bottom: 0; }
@@ -384,8 +380,8 @@
   .g-bar.crit { background: #c9441f; }
   .g-bar.done { background: #aaa89f; box-shadow: none; }
   .g-buffer { position: absolute; top: 50%; display: flex; align-items: center; height: 2rem; margin-top: -1rem; padding: 0 0.6rem; overflow: hidden; font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-pine); white-space: nowrap; background: repeating-linear-gradient(135deg, rgb(143 178 154 / 0.35) 0 5px, transparent 5px 10px); border: 1.5px dashed var(--color-moss); border-radius: 0.5rem; }
-  .g-row.is-done .cell.name { background: #efeee8; color: #8b897f; }
-  .g-row.is-done .cell.name .link { color: #8b897f; text-decoration: line-through; }
+  .g-row.is-done .cell.name { background: #efeee8; color: #5d5a4f; }
+  .g-row.is-done .cell.name .link { color: #5d5a4f; text-decoration: line-through; }
   .g-row.is-done .g-days { background: #f3f2ec; }
   .legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem; margin: 0.5rem 0; padding: 0; font-size: 0.85rem; color: var(--color-ink-soft); list-style: none; }
   .legend li { display: inline-flex; align-items: center; gap: 0.45rem; }
@@ -405,7 +401,7 @@
   .pill.on { color: var(--color-paper); background: var(--color-pine); border-color: var(--color-pine-deep); }
   .pill .count { margin-left: 0.2rem; opacity: 0.75; }
   .toast { position: fixed; z-index: 50; right: 1.5rem; bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; max-width: 24rem; padding: 1rem 1.2rem; color: var(--color-pine-deep); background: #d9e8de; border: 1.5px solid var(--color-pine); border-radius: var(--radius-card); box-shadow: 5px 5px 0 var(--color-pine); animation: pop 0.35s; }
-  .is-done { opacity: 0.6; filter: grayscale(1); }
+  .trow.is-done .link, .dash-task.is-done .link { color: var(--color-ink-soft); }
   .locked-box { display: flex; align-items: center; gap: 0.7rem; padding: 0.8rem 1rem; color: #4d4b43; background: #eceae1; border: 1px solid #c9c6b8; border-radius: var(--radius-ctl); }
   .sent-box { display: flex; align-items: flex-start; gap: 1rem; margin-top: 0.8rem; padding: 1.2rem; background: #d9e8de; border: 2px solid var(--color-pine); border-radius: var(--radius-card); animation: pop 0.35s; }
   .sent-box strong { display: block; font-size: 1.15rem; color: var(--color-pine-deep); }
@@ -466,3 +462,32 @@
   .meter { height: 0.7rem; background: var(--color-paper-deep); border-radius: 999px; overflow: hidden; }
   .meter > div { height: 100%; background: var(--color-pine); border-radius: 999px; transition: width 0.6s; }
   .bar-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+/* this is for the refinements, outside any layer so they win over the older rules above */
+  /* the popup sits in the middle (Tailwind's reset removes the browser's own centering) */
+  .task-modal { margin: auto; }
+
+  /* quieter project facts, so they do not look like buttons */
+  .stats li { padding: 0.2rem 0.75rem; font-size: 0.95rem; background: var(--color-paper); border: 1px solid var(--color-line); }
+  .stats .warn { background: #fbe4dc; border-color: #e3a48f; }
+
+  /* shorter timeline rows: the name takes a line, the small facts share the lines under it */
+  .g-row > .cell.name { flex-flow: row wrap; align-content: center; align-items: center; gap: 0.3rem 0.6rem; }
+  .cell.name .name-line { width: 100%; }
+  .cell.name .who { line-height: 1.35; }
+  .g-days { min-height: 4.4rem; }
+
+  /* on a phone the side bar is short: pages wrap, and your projects sit in one row that scrolls sideways */
+  @media (max-width: 1023px) {
+    .rail button { width: auto; padding: 0.4rem 0.7rem; }
+    .rail nav { margin: 0; }
+    .rail .eyebrow, .rail .project-link small { display: none; }
+    .rail nav[aria-label="Projects"] { flex-flow: row nowrap; overflow-x: auto; }
+    .rail .project-link { flex: none; max-width: 14rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .rail .log-out { position: absolute; top: 0.9rem; right: 0.75rem; }
+    .g-row > .cell.name, .g-row > .cell.corner { width: 12rem; }
+  }
+
+  /* the name keeps its weight with the new font, titles wrap evenly, and list titles are easy to read */
+  .font-display { font-weight: 700; }
+  h1 { text-wrap: balance; }
+  .tgroup-head { font-size: 1.05rem; }

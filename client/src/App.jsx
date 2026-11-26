@@ -182,7 +182,7 @@ export default function App() {
 						</>
 					)}
 
-					<button className="mt-3 lg:mt-auto" onClick={handleLogout}><Icon name="out" />Log out</button>
+					<button className="log-out mt-3 lg:mt-auto" onClick={handleLogout}><Icon name="out" />Log out</button>
 				</div>
 			</aside>
 
