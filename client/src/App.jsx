@@ -150,7 +150,7 @@ export default function App() {
 	const here = page => (shown === page ? 'page' : undefined)
 
 	return (
-		<div className="min-h-screen lg:grid lg:grid-cols-[16.5rem_1fr]">
+		<div className="min-h-screen lg:grid lg:grid-cols-[16.5rem_minmax(0,1fr)]">
 			{/*this is for the side rail: pages, your projects and log out (on a phone it sits on top)*/}
 			<aside className="rail relative overflow-hidden bg-pine-deep text-paper lg:sticky lg:top-0 lg:h-screen">
 				<Contours className="pointer-events-none absolute inset-0 h-full w-full text-moss opacity-20" />

@@ -13,11 +13,13 @@ const [dep, setDep] = useState('')
 const [desc, setDesc] = useState('')
 //this is for the message when the typed name is not in the project
 const [error, setError] = useState('')
+const datesWrong = !!startDate && !!endDate && endDate < startDate
 
 //this is for saving the task when the button is clicked
 function handleSubmit(e) {
     e.preventDefault()
     if (!name || !startDate || !endDate) return
+    //this is for the message under the end date (it shows as soon as the dates are the wrong way round)
     if (endDate < startDate) return
 
     //this is for making sure the assigned person is in the project
@@ -94,7 +96,8 @@ return (
 
     <div className="field">
         <label htmlFor="task-end">End date</label>
-        <input id="task-end" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+        <input id="task-end" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} aria-invalid={datesWrong} aria-describedby={datesWrong ? 'task-end-error' : undefined} />
+        {datesWrong && <span id="task-end-error" className="error-box" role="alert">The end date can't be before the start date.</span>}
     </div>
 
     {/*this is for picking which task must finish first, the dropdown keeps your choice shown*/}

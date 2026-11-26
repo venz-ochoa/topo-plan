@@ -491,3 +491,16 @@
   .font-display { font-weight: 700; }
   h1 { text-wrap: balance; }
   .tgroup-head { font-size: 1.05rem; }
+
+  /* forms: columns and boxes may shrink, so nothing spills out of its card
+     (without this, a long task name in a drop-down or a box's own size pushes the column wider) */
+  .add-task { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .add-task > .field, .edit-grid > .field { min-width: 0; }
+  .edit-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .field > input, .field > select, .field > textarea { width: 100%; min-width: 0; }
+  .invite-row select { flex: 1 1 14rem; min-width: 0; }
+  /* when there is not room for two boxes side by side, they go one under the other */
+  @media (max-width: 48rem) {
+    .add-task { grid-template-columns: minmax(0, 1fr); }
+    .add-task > .field:not(.span-2) { grid-column: 1 / -1; }
+  }
