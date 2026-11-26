@@ -35,7 +35,8 @@ describe("complete tasks do not move", () => {
     const tasks = [t("a", [], "done"), t("b", ["a"], "not_done", "2026-11-13", "2026-11-14")];
     const moved = shiftTask(tasks, "b", 1);
     expect(moved[0].startDate).toBe("2026-11-10");
-    expect(moved[1].startDate).toBe("2026-11-14");
+    //this is for skipping the weekend: Friday the 13th moves to Monday the 16th
+    expect(moved[1].startDate).toBe("2026-11-16");
     expect(reschedule(tasks)[0].endDate).toBe("2026-11-12");
   });
 });

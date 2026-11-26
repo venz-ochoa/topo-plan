@@ -246,20 +246,26 @@ async function decide(req, approve) {
     return
     }
 
-    //this is for saving the decision first, so a request can never be approved twice
+    //this is for saving the decision and the new dates in one step, so one is never saved without the other
     try {
-    await decideRequest(req.id, approve)
+    let newDates = null
+    if (approve && isExtension) {
+        //this is for working out the dates from what is really saved, after earlier changes have finished
+        await saveQueue.current
+        const saved = await getTasks(project.id)
+        newDates = shiftTask(saved, req.taskId, req.days)
+        .filter((t, i) => t.startDate !== saved[i].startDate || t.endDate !== saved[i].endDate)
+        .map(t => ({ id: t.id, start_date: t.startDate, end_date: t.endDate }))
+    }
+    await decideRequest(req.id, approve, newDates)
     } catch (e) {
     setMessage(friendly(e))
-    loadRequests()
+    load()
     return
     }
 
-    //this is for moving the task after the approval is saved (date requests)
-    if (approve && task && isExtension) await changeTasks(shiftTask(tasksRef.current, task.id, req.days))
-    //this is for a status request: the database already changed the status, so load the tasks again
-    if (approve && req.kind === 'status') await load()
-    loadRequests()
+    //this is for showing what the database changed
+    await load()
     setNotice(approve ? 'Request approved.' : 'Request denied.')
 }
 
@@ -268,9 +274,12 @@ async function removeTask(id) {
     if (!confirm('Delete this task?')) return
     setMessage('')
     try {
+    //this is for letting earlier saves finish first, so a late one cannot bring the task back
+    await saveQueue.current
+    //this is for the database also removing it from the tasks that waited for it, in the same step
     await deleteTask(id)
     setSelectedId(null)
-    await changeTasks(tasksRef.current.filter(t => t.id !== id).map(t => ({ ...t, dependsOn: t.dependsOn.filter(d => d !== id) })))
+    await load()
     } catch (e) {
     setMessage(friendly(e))
     }

@@ -5,206 +5,184 @@
 ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
 ![Supabase](https://img.shields.io/badge/supabase-%233ECF8E.svg?style=for-the-badge&logo=supabase&logoColor=white)
 
-A shared project planner for small teams. It draws one timeline (a Gantt chart), finds the **critical path** (the chain of tasks that decides the finish date), and lets a team work on it together online, with an admin in charge of the plan and members in charge of their own tasks.
+A project planner for small teams. It shows your tasks on a timeline and marks the **critical tasks**: the ones that will delay the whole project if they are late.
 
-Everything runs in the browser. There is no server of our own: the app talks straight to Supabase, and the database rules decide who can do what.
-
-## The idea
-
-Most small team projects fail the same way: nobody knows which task is holding everyone up. TopoPlan answers that. Tasks depend on each other, the app works out which ones have no spare time ("critical") and which have a buffer, and when something slips, everything that waits on it moves too.
-
-Teams share one timeline per project. An admin owns the plan. Members own their own tasks: they update progress, and if they need more time, they ask the admin instead of quietly missing the date.
-
-## Objectives
-
-- Show one shared timeline per project that the whole team can see.
-- Find the critical path automatically and show each task's buffer.
-- Keep the plan consistent: a task can never start before the tasks it depends on finish, and moving a task moves the tasks that wait for it.
-- Let several people use it online, with separate accounts and separate projects.
-- Give the right power to the right person: admins edit the plan, members update only the tasks assigned to them.
-- Let members ask for status changes and date changes, and let admins approve or deny them, inside the app.
-- Stay free and simple to run (static hosting plus a free database tier).
-
-## Scope
-
-**In scope**
-- Accounts (sign up, log in, change name and password)
-- Projects, invites by link or code, and admin and member roles
-- Tasks with dates, priority, an assigned person and a dependency
-- Timeline with critical path and buffer, plus a dashboard of task lists
-- Status and date-change requests from the assigned person, approved or denied by admins
-- Online hosting on GitHub Pages with Supabase as the backend
-
-**Out of scope for now**
-- A custom backend server
-- Skipping weekends and holidays
-- Real-time live updates (the app has a Refresh button and checks for new requests every 30 seconds)
-- Email-based features such as notifications by email
-- Mobile apps
+The app is built with React and Vite. It uses Supabase for logins and the database, so it has no server of its own.
 
 ## Features
 
-| Area | What it does |
+- **Dashboard:** see all your projects and invites.
+- **Tasks:** tasks are listed as Up next, In progress, Later and Done this week.
+- **Timeline:** see task dates, critical tasks and spare days.
+- **Scheduling:** when you move a task by a day, unfinished tasks that wait for it move too. Weekends and listed holidays are skipped. Done tasks never move.
+- **Requests:** ask an admin to change a task's status, or to move it one day earlier or later.
+- **Team:** invite people by link or email, change roles and remove people.
+- **Notifications:** get updates about tasks, requests and invites.
+- **Profile:** change your name, email or password, see your activity, or delete your account.
+- **Live updates:** changes show up without refreshing the page.
+
+## Roles
+
+Each project has an **owner**, and can have more **admins** and **members**. The owner is also an admin. You can have a different role in each project.
+
+| Action | Member | Admin | Owner |
+|---|---|---|---|
+| View tasks and the timeline | Yes | Yes | Yes |
+| Add, edit, assign and delete tasks | No | Yes | Yes |
+| Approve or deny requests | No | Yes | Yes |
+| Invite people and remove members | No | Yes | Yes |
+| Make a member an admin | No | Yes | Yes |
+| Remove an admin or make an admin a member | No | No | Yes |
+| Give ownership to another admin, or delete the project | No | No | Yes |
+
+### Task status
+
+- Only an admin who is **assigned to the task** can change its status directly.
+- A member assigned to the task can send a request. Any admin in the project can approve or deny it.
+- A task cannot start or finish until the task it waits for is done.
+- A done task is locked.
+- A person can send up to 5 requests for one task in 24 hours.
+- A new task with a start date in the past is saved as done.
+
+### Leaving and deleting
+
+- A project with people in it must have at least one admin.
+- An admin must finish their tasks before leaving.
+- If the owner leaves, another admin becomes the owner.
+- You cannot delete your account if you are the only admin of a project with other people.
+- To delete your account, you must enter your password again.
+- Deleting your account also deletes projects where you are the only person.
+- Old notifications and database logs may keep some details after an account is deleted.
+
+## Invites
+
+- Each invite works once and lasts 7 days.
+- An email invite only works for that email.
+- An invite link without an email works for anyone who has it, so share it with care.
+- **The app does not send invite emails.** A person with an account sees the invite in the app. When you create a project, you can also copy each invite link and send it yourself.
+
+| Limit | Amount |
 |---|---|
-| Timeline | Gantt chart from today to the end of the latest task (at least 7 days, up to 180). It scrolls sideways and the task column stays in view. Dark bars are critical tasks, light bars have buffer |
-| Critical path | Forward and backward pass over the task graph, buffer (slack) shown per task |
-| Rescheduling | A task starts the day after its dependency ends. Moving a task by a day moves everything that waits for it |
-| Dashboard | Four lists: Ready to start, Underway, Coming later, Completed this week |
-| Task popup | Click any task to see who it is assigned to, whether it is critical, its dates and status, and to ask an admin for a status change or an extension |
-| Team tab | Everyone in the project with their role and their tasks |
-| Status | Waiting, Underway, Complete, colour coded. The assigned member asks, and an admin approves |
-| Requests | Status changes and date changes (one day later or earlier) are asked by the assigned member and approved or denied by an admin, in the Requests tab or the task popup |
-| Teams | Invite links that work once and expire after 7 days, for a member or an admin |
-| Profile | Lists every project you are in with your role in each, plus change name and password |
-| Multi project | One person can be an admin in one project and a member in another |
+| Invite links, for each admin | 60 per hour (recent email invites count too) |
+| Unused invites in a project | No new link once there are 100 |
+| Email invites, for each admin | 30 per hour |
+| Invites to the same email, from one admin | 3 per 24 hours |
+| Emails when creating a project | 20 |
 
-## Roles and permissions
+## Setup
 
-| Action | Admin | Member |
-|---|---|---|
-| See the dashboard and the timeline | yes | yes |
-| Add tasks, move dates, change who a task is assigned to | yes | no |
-| Change a task's status | directly, if it is assigned to them | asks an admin to approve, on their own tasks only |
-| Ask for an extension (a day later or earlier) | not needed (can edit dates) | on their own tasks only |
-| Approve or deny requests | yes | no |
-| Make invites | yes | no |
+You need [Node.js](https://nodejs.org) 22.12 or newer in version 22, version 24, or version 26 and newer. You also need a [Supabase](https://supabase.com) account.
 
-The buttons are hidden for people who cannot use them, but the real protection is in the database (see Security).
-
-## Tech stack
-
-| Layer | Choice |
-|---|---|
-| Frontend | React with Vite (JavaScript) |
-| Hosting | GitHub Pages (static files) |
-| Backend | Supabase: Postgres database, built-in login, auto-generated API |
-| Access rules | Postgres Row Level Security (RLS) and a few database functions |
-| Tests | Vitest (critical path engine) |
-
-```mermaid
-flowchart LR
-  A[React app on GitHub Pages] -->|HTTPS and login token| B[Supabase API]
-  B --> C[(Postgres with RLS)]
-  B --> D[Supabase Auth]
-```
-
-## How the scheduling works
-
-The engine takes each task as a length in days plus a list of tasks it depends on.
-
-1. Topological sort: orders the tasks and throws an error on circular dependencies.
-2. Forward pass: the earliest start of each task.
-3. Backward pass: the latest start that does not delay the project.
-4. Buffer (slack) = latest start minus earliest start. A buffer of 0 means the task is critical.
-
-On top of that, `schedule.js` pushes any task that starts before its dependency ends, and `shiftTask` moves a task and the tasks that wait for it. Weekends count as normal days.
-
-## Data model
-
-```
-users      id, name                              (one per login)
-projects   id, name
-roles      user_id, project_id, role             (admin or member, one row per person per project)
-invites    code, project_id, role, expires_at, used_by
-tasks      id, project_id, name, assigned_to, start_date, end_date,
-           priority, depends_on, status, finished_at
-requests   id, project_id, task_id, requested_by, kind (status or extension),
-           days (1 or -1), new_status, reason, status (pending, approved, denied)
-```
-
-Email and password live in Supabase's private `auth.users` table, which the app cannot read. The `users` table above holds only the display name.
-
-## Security
-
-- Only the public (anon) key is in the app. The secret `service_role` key is never used in the browser.
-- Row Level Security is on for every table. People only see projects they belong to, and only admins can write tasks or invites.
-- Joining a project only works through a valid invite code. Nobody can add themselves or make themselves an admin.
-- A database trigger makes sure a task's status only changes through an approved request (or directly by an admin who is assigned to it), even if someone calls the database directly.
-- Invite codes work once and expire after 7 days.
-- Passwords are handled and hashed by Supabase. Sign-up requires email confirmation.
-
-## Project structure
-
-```
-supabase/
-  schema.sql              full database setup (wipes and rebuilds the tables)
-client/
-  .env                    your Supabase keys (never commit this)
-  src/
-    App.jsx               login state, project switcher, top bar
-    supabase.js           the Supabase connection
-    db.js                 every database call
-    labels.js             status words and small helpers
-    pages/                Login, SignUp, TeamSetup, Project, Dashboard,
-                          Home (timeline), Team, Requests, Profile
-    components/           AddTask, TaskDetails
-    engine/               graph.js, cpm.js, schedule.js, cpm.test.js
-```
-
-## Run it
-
-1. Create a free project at supabase.com.
-2. In the Supabase SQL Editor, paste and run `supabase/schema.sql`. This wipes and rebuilds the tables, so use it only on a new or test database.
-3. Create `client/.env`:
+1. Create a **new, empty** Supabase project.
+2. Open **SQL Editor**, paste all of [`server/schema.sql`](server/schema.sql), and run it once.
+3. In Supabase's login settings, keep **Confirm email** turned on. This stops people from using an email they do not own.
+4. Create the file `client/.env`:
    ```
    VITE_SUPABASE_URL=your-project-url
    VITE_SUPABASE_ANON_KEY=your-anon-or-publishable-key
    ```
-4. Make sure `.env` is listed in `.gitignore`.
+   Never commit this file. Never put the `service_role` key in the app.
 5. Start the app:
    ```bash
    cd client
    npm install
    npm run dev
    ```
-6. Run the engine tests with `npm test` inside `client/`.
+6. Open `http://localhost:3000`.
 
-## Deploying to GitHub Pages (planned)
+### About the other SQL files
 
-- Set `base: '/your-repo-name/'` in `vite.config.js`.
-- Build and publish with a GitHub Actions workflow.
-- Add the two `VITE_` values as repository secrets so the build can read them.
-- In Supabase, set the Site URL (Authentication, then URL Configuration) to the GitHub Pages address, or confirmation emails will link to the wrong place.
+For a new project, run **only `schema.sql`**. Do not run it on a project that already has the tables.
 
-## Troubleshooting
+The `migrate_security_*.sql` files are a history of changes to an older database. The `test_security_*.sql` files were used to check each change. Some older ones may not work on the final database.
 
-- **"Email rate limit exceeded":** Supabase's built-in email sender allows only a few emails per hour. For testing, create users by hand in the dashboard (Authentication, then Users, tick Auto Confirm) or turn off Confirm email temporarily. For real use, set up custom SMTP.
-- **"Could not find the table ... in the schema cache":** the SQL did not finish running, or the app is pointed at a different Supabase project. Re-run the SQL and check `client/.env`. If needed run `notify pgrst, 'reload schema';`.
+## Database
 
-## Current status
+| Table | What it stores |
+|---|---|
+| `users` | Display names |
+| `projects` | Project names and descriptions |
+| `roles` | Who is in each project, their role, and who the owner is |
+| `tasks` | Task details, dates, status and dependencies |
+| `requests` | Requests and their answers |
+| `invites` | Invite codes |
+| `notifications` | Messages shown in the app |
+| `activity_log`, `audit_log` | Records of actions |
 
-**Built and checked by running it**
-- Critical path engine with unit tests
-- Timeline, rescheduling, slipping a task together with its dependents
-- Sign up and log in with Supabase
-- Projects, invite links, admin and member roles, multi-project profile
-- Dashboard lists, member names in the assignee dropdown
+Supabase stores emails and passwords separately.
 
-**Built, but not yet tested end to end**
-- Assigning tasks to a person (instead of typing a name)
-- Status changes that need admin approval
-- Colour-coded statuses and the new labels (Waiting, Underway, Complete)
-- The task popup (click a task) and the Team tab
-- Status and date-change requests, and the Requests tab for admins
+The database also has tables for comments, checklists, links, messages, templates, holidays, time off, extra assignees and notification settings. The app has no screens for these, so people cannot change them through the app's connection. Some database functions are also unused.
 
-These need a fresh run of `supabase/schema.sql`, which rebuilds the tables (logins are kept).
+## Security
 
-**Not done yet**
-- GitHub Pages deployment and the Actions workflow
-- Custom SMTP for sign-up emails
-- Tests for `reschedule` and `shiftTask`
-- Live updates instead of Refresh
-- Deleting tasks, leaving a project, removing members, changing email
+- The database checks who can see and change data. Hiding a button is not the only protection.
+- Row Level Security is on for all tables. This means database rules control which rows each user can reach.
+- People can only see projects they belong to.
+- Only admins can add, edit or delete tasks.
+- People can only be newly assigned to tasks in projects they belong to.
+- The app gets only the table permissions it uses. If you add a feature, you may need to add a permission.
+- Removed members lose access to the project. Done tasks may still show their name.
 
-## Roadmap
+## Holidays
 
-- Test the request flow with two accounts, then deploy to GitHub Pages
-- Add custom SMTP so sign-up emails do not hit the rate limit
-- Tests for the scheduling code
-- Skip weekends and holidays
-- Live updates
-- Undo
-- Delete tasks and manage team members
+The holiday list is in [`client/src/engine/holidays.js`](client/src/engine/holidays.js). It has dates for 2026 and 2027.
+
+- The two Eid holidays for 2027 still need to be added when announced.
+- The 2026 list may be missing Eid'l Adha.
+- For years without a list, only weekends are skipped.
+- Changing the list does not update saved tasks right away.
+
+## Folders
+
+```
+client/
+  .env             your Supabase keys (you create this)
+  src/
+    App.jsx        login and page switching
+    db.js          database requests
+    supabase.js    Supabase connection
+    pages/         app screens
+    components/    shared parts of the screens
+    engine/        scheduling, rules and tests
+server/
+  schema.sql       setup for a new database
+  migrate_security_*.sql
+  test_security_*.sql
+```
+
+## Tests
+
+Run these inside `client/`:
+
+```bash
+npm test -- --run
+npm run build
+```
+
+**Current status (November 26, 2026):**
+
+- All 37 app tests passed and the build worked.
+- Database changes up to step 8 passed their SQL checks on the existing Supabase project.
+- The step 9 security changes have **not been tested yet**.
+- `schema.sql` has **not yet been tested** on a new project.
+- Not every screen and action has been checked in a browser.
+- The app is **not deployed yet**.
+
+## Before going online
+
+- Test `schema.sql` on a new project, then test the app with owner, admin and member accounts.
+- Choose a web host. If you use GitHub Pages, set `base: '/your-repo-name/'` in `client/vite.config.js`.
+- Add the two `VITE_` values to your build settings.
+- In Supabase, set **Site URL** to your app's web address.
+- In Supabase, require passwords of at least 8 characters, check the allowed redirect addresses and login limits, and think about adding CAPTCHA.
+- Pick a host that can send a security header that stops other sites from showing your app inside a frame (`Content-Security-Policy: frame-ancestors 'none'`). GitHub Pages cannot do this.
+- Set up your own email service for sign-up emails. Supabase's built-in one has a low limit.
+- Check Supabase's login settings, file storage rules and Edge Functions. `schema.sql` does not set these up.
+
+## Common problems
+
+- **"Email rate limit exceeded":** wait, then try again. You can also create test users in the Supabase dashboard.
+- **"Could not find the table ... in the schema cache":** check that `schema.sql` finished and that `client/.env` points to the right project. If both are correct, run `notify pgrst, 'reload schema';`.
 
 ## License
 

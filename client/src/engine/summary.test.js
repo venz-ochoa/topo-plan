@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { groupTasks, summarizeProject, isOverdue } from "./summary.js";
-import { parseEmails, MAX_INVITES } from "../emails.js";
+import { parseEmails, MAX_INVITES } from "./emails.js";
 
 //this is for a fixed "now" so the tests never depend on the real date
 const NOW = new Date("2026-11-05T12:00:00");

@@ -203,10 +203,12 @@ export async function sendRequest({
 }
 
 //this is for an admin approving or denying a request
-export async function decideRequest(requestId, approve) {
+//newDates is only for approving a date change: [{ id, start_date, end_date }], saved together with the approval
+export async function decideRequest(requestId, approve, newDates = null) {
   const { error } = await supabase.rpc("decide_request", {
     request_id: requestId,
     approve: approve,
+    new_dates: newDates,
   });
   if (error) throw error;
 }

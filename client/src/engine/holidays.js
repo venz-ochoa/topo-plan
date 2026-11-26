@@ -20,6 +20,26 @@ const HOLIDAYS = [
   "2026-12-25",
   "2026-12-30",
   "2026-12-31",
+  //this is for 2027 (Proclamation No. 1427). Feb 25 is a special working day, so it is not here
+  //the two Eid holidays of 2027 are announced separately: add them when they are
+  "2027-01-01",
+  "2027-02-06",
+  "2027-03-25",
+  "2027-03-26",
+  "2027-03-27",
+  "2027-04-09",
+  "2027-05-01",
+  "2027-06-12",
+  "2027-08-21",
+  "2027-08-30",
+  "2027-11-01",
+  "2027-11-02",
+  "2027-11-30",
+  "2027-12-08",
+  "2027-12-24",
+  "2027-12-25",
+  "2027-12-30",
+  "2027-12-31",
 ];
 
 //this is for asking if a date text like 2026-10-28 is a working day
